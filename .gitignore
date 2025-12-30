@@ -17,9 +17,6 @@ obj/
 # Rider/JetBrains
 .idea/
 
-# ASP.NET Scaffolding
-ScaffoldingReadMe.txt
-
 # Logs
 *.log
 
