@@ -1,2 +1,27 @@
-backend/docs
+# macOS
 .DS_Store
+
+# VSCode
+.vscode/
+
+# Build output
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider/JetBrains
+.idea/
+
+# ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+# Logs
+*.log
+
+# Additional stuff
+backend/docs
