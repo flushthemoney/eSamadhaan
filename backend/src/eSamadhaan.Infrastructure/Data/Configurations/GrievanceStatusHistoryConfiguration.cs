@@ -34,6 +34,9 @@ public class GrievanceStatusHistoryConfiguration : IEntityTypeConfiguration<Grie
             .IsRequired()
             .HasDefaultValueSql("GETUTCDATE()");
 
+        builder.Property(gsh => gsh.Remarks)
+            .HasMaxLength(1000);
+
         // Indexes
         builder.HasIndex(gsh => gsh.GrievanceId)
             .HasDatabaseName("IX_GrievanceStatusHistories_GrievanceId");

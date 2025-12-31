@@ -9,6 +9,8 @@ public class Grievance
     public int CitizenId { get; set; }
     public int CategoryId { get; set; }
     public int DepartmentId { get; set; }
+    public string Description { get; set; } = string.Empty;
+    public string? AttachmentUrl { get; set; }
     public GrievanceStatus CurrentStatus { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

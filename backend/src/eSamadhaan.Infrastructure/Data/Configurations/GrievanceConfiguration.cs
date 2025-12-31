@@ -29,6 +29,13 @@ public class GrievanceConfiguration : IEntityTypeConfiguration<Grievance>
         builder.Property(g => g.DepartmentId)
             .IsRequired();
 
+        builder.Property(g => g.Description)
+            .IsRequired()
+            .HasMaxLength(2000);
+
+        builder.Property(g => g.AttachmentUrl)
+            .HasMaxLength(500);
+
         // Enum to int mapping - no database default, status set explicitly in application
         builder.Property(g => g.CurrentStatus)
             .IsRequired()

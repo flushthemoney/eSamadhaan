@@ -51,6 +51,7 @@ builder.Services.AddScoped<IAssignmentService, AssignmentService>();
 builder.Services.AddScoped<IResolutionService, ResolutionService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IOfficerService, OfficerService>();
 
 // ========================================
 // 4. JWT Authentication Configuration

@@ -65,6 +65,8 @@ public class GrievanceService : IGrievanceService
             CitizenId = citizenId,
             CategoryId = categoryId,
             DepartmentId = departmentId,
+            Description = description,
+            AttachmentUrl = attachmentUrl,
             CurrentStatus = GrievanceStatus.Submitted,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -200,7 +202,7 @@ public class GrievanceService : IGrievanceService
         await _grievanceRepository.UpdateAsync(grievance);
 
         // Record status history
-        await RecordStatusHistoryAsync(grievanceId, oldStatus, newStatus, changedByUserId);
+        await RecordStatusHistoryAsync(grievanceId, oldStatus, newStatus, changedByUserId, remarks);
     }
 
     public async Task<IEnumerable<object>> GetGrievanceStatusHistoryAsync(int grievanceId)
@@ -215,7 +217,8 @@ public class GrievanceService : IGrievanceService
             NewStatus = h.NewStatus,
             ChangedByUserId = h.ChangedByUserId,
             ChangedByUserName = h.ChangedByUser?.Name ?? "Unknown",
-            ChangedAt = h.ChangedAt
+            ChangedAt = h.ChangedAt,
+            Remarks = h.Remarks
         });
     }
 
@@ -334,7 +337,7 @@ public class GrievanceService : IGrievanceService
         }
     }
 
-    private async Task RecordStatusHistoryAsync(int grievanceId, GrievanceStatus oldStatus, GrievanceStatus newStatus, int changedByUserId)
+    private async Task RecordStatusHistoryAsync(int grievanceId, GrievanceStatus oldStatus, GrievanceStatus newStatus, int changedByUserId, string? remarks = null)
     {
         var history = new GrievanceStatusHistory
         {
@@ -342,7 +345,8 @@ public class GrievanceService : IGrievanceService
             OldStatus = oldStatus,
             NewStatus = newStatus,
             ChangedByUserId = changedByUserId,
-            ChangedAt = DateTime.UtcNow
+            ChangedAt = DateTime.UtcNow,
+            Remarks = remarks
         };
 
         await _statusHistoryRepository.CreateAsync(history);

@@ -10,6 +10,7 @@ public class GrievanceStatusHistory
     public GrievanceStatus NewStatus { get; set; }
     public int ChangedByUserId { get; set; }
     public DateTime ChangedAt { get; set; }
+    public string? Remarks { get; set; }
 
     // Navigation properties
     public Grievance Grievance { get; set; } = null!;
