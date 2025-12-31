@@ -4,10 +4,10 @@ namespace eSamadhaan.Application.Interfaces.Services;
 
 public interface ICategoryService
 {
-    Task<int> CreateCategoryAsync(string name, string description);
-    Task<object?> GetCategoryByIdAsync(int id);
-    Task<IEnumerable<object>> GetAllCategoriesAsync();
-    Task UpdateCategoryAsync(int id, string name, string description);
+    Task<CategoryDto> CreateCategoryAsync(CreateCategoryRequestDto request);
+    Task<CategoryDto> GetCategoryByIdAsync(int id);
+    Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync();
+    Task UpdateCategoryAsync(int id, UpdateCategoryRequestDto request);
     Task DeleteCategoryAsync(int id);
     Task<bool> CategoryExistsAsync(int id);
 }

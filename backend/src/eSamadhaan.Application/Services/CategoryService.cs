@@ -19,15 +19,15 @@ public class CategoryService : ICategoryService
         _grievanceRepository = grievanceRepository;
     }
 
-    public async Task<int> CreateCategoryAsync(string name, string description)
+    public async Task<CategoryDto> CreateCategoryAsync(CreateCategoryRequestDto request)
     {
         // Validate inputs
-        if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(request.Name))
         {
             throw new ValidationException("Category name is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(description))
+        if (string.IsNullOrWhiteSpace(request.Description))
         {
             throw new ValidationException("Category description is required.");
         }
@@ -35,15 +35,15 @@ public class CategoryService : ICategoryService
         // Create category
         var category = new GrievanceCategory
         {
-            Name = name,
-            Description = description
+            Name = request.Name,
+            Description = request.Description
         };
 
         var createdCategory = await _categoryRepository.CreateAsync(category);
-        return createdCategory.Id;
+        return await MapToDtoAsync(createdCategory);
     }
 
-    public async Task<object?> GetCategoryByIdAsync(int id)
+    public async Task<CategoryDto> GetCategoryByIdAsync(int id)
     {
         var category = await _categoryRepository.GetByIdAsync(id);
         
@@ -52,16 +52,23 @@ public class CategoryService : ICategoryService
             throw new NotFoundException("Category", id);
         }
 
-        return MapToDto(category);
+        return await MapToDtoAsync(category);
     }
 
-    public async Task<IEnumerable<object>> GetAllCategoriesAsync()
+    public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
     {
         var categories = await _categoryRepository.GetAllAsync();
-        return categories.Select(MapToDto);
+        var dtos = new List<CategoryDto>();
+        
+        foreach (var category in categories)
+        {
+            dtos.Add(await MapToDtoAsync(category));
+        }
+        
+        return dtos;
     }
 
-    public async Task UpdateCategoryAsync(int id, string name, string description)
+    public async Task UpdateCategoryAsync(int id, UpdateCategoryRequestDto request)
     {
         var category = await _categoryRepository.GetByIdAsync(id);
         
@@ -71,18 +78,18 @@ public class CategoryService : ICategoryService
         }
 
         // Validate inputs
-        if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(request.Name))
         {
             throw new ValidationException("Category name is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(description))
+        if (string.IsNullOrWhiteSpace(request.Description))
         {
             throw new ValidationException("Category description is required.");
         }
 
-        category.Name = name;
-        category.Description = description;
+        category.Name = request.Name;
+        category.Description = request.Description;
 
         await _categoryRepository.UpdateAsync(category);
     }
@@ -112,13 +119,16 @@ public class CategoryService : ICategoryService
     }
 
     // Private helper methods
-    private CategoryDto MapToDto(GrievanceCategory category)
+    private async Task<CategoryDto> MapToDtoAsync(GrievanceCategory category)
     {
+        var grievanceCount = await _grievanceRepository.CountByCategoryAsync(category.Id);
+        
         return new CategoryDto
         {
             Id = category.Id,
             Name = category.Name,
-            Description = category.Description
+            Description = category.Description,
+            GrievanceCount = grievanceCount
         };
     }
 }
