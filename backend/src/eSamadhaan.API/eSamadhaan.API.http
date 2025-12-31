@@ -1,6 +1,6 @@
-@eSamadhaan.API_HostAddress = http://localhost:5124
+@baseUrl = http://localhost:5124
 
-GET {{eSamadhaan.API_HostAddress}}/weatherforecast/
+GET {{{{baseUrl}}}}/weatherforecast/
 Accept: application/json
 
 ###
