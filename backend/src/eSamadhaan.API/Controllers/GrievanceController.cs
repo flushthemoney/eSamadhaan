@@ -1,5 +1,7 @@
 using eSamadhaan.Application.DTOs.Assignment;
+using eSamadhaan.Application.DTOs.Feedback;
 using eSamadhaan.Application.DTOs.Grievance;
+using eSamadhaan.Application.DTOs.Resolution;
 using eSamadhaan.Application.Interfaces.Services;
 using eSamadhaan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -15,13 +17,22 @@ public class GrievanceController : ControllerBase
 {
     private readonly IGrievanceService _grievanceService;
     private readonly IAssignmentService _assignmentService;
+    private readonly IResolutionService _resolutionService;
+    private readonly IFeedbackService _feedbackService;
+    private readonly IReportService _reportService;
 
     public GrievanceController(
         IGrievanceService grievanceService,
-        IAssignmentService assignmentService)
+        IAssignmentService assignmentService,
+        IResolutionService resolutionService,
+        IFeedbackService feedbackService,
+        IReportService reportService)
     {
         _grievanceService = grievanceService;
         _assignmentService = assignmentService;
+        _resolutionService = resolutionService;
+        _feedbackService = feedbackService;
+        _reportService = reportService;
     }
 
     /// <summary>
@@ -295,6 +306,328 @@ public class GrievanceController : ControllerBase
         var statistics = await _grievanceService.GetGrievanceCountByCategoryAsync();
 
         return Ok(statistics);
+    }
+
+    // ========================================
+    // RESOLUTION ENDPOINTS
+    // ========================================
+
+    /// <summary>
+    /// Submit resolution for a grievance (Officers only)
+    /// </summary>
+    [HttpPost("{grievanceId}/resolution")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer")]
+    public async Task<IActionResult> SubmitResolution(
+        int grievanceId,
+        [FromBody] CreateResolutionRequestDto request)
+    {
+        var officerId = GetCurrentUserId();
+
+        var resolutionId = await _resolutionService.CreateResolutionAsync(
+            grievanceId,
+            officerId,
+            request.ResolutionRemarks);
+
+        return CreatedAtAction(
+            nameof(GetResolutionByGrievanceId),
+            new { grievanceId },
+            new { resolutionId, message = "Resolution submitted successfully" });
+    }
+
+    /// <summary>
+    /// Get resolution for a specific grievance
+    /// </summary>
+    [HttpGet("{grievanceId}/resolution")]
+    public async Task<IActionResult> GetResolutionByGrievanceId(int grievanceId)
+    {
+        // Apply authorization: Citizens can only view resolutions of their own grievances
+        if (User.IsInRole("Citizen"))
+        {
+            var citizenId = GetCurrentUserId();
+            var grievance = await _grievanceService.GetGrievanceByIdAsync(grievanceId);
+            var grievanceDto = grievance as dynamic;
+            
+            if (grievanceDto?.CitizenId != citizenId)
+            {
+                return Forbid();
+            }
+        }
+
+        var resolution = await _resolutionService.GetResolutionByGrievanceIdAsync(grievanceId);
+
+        if (resolution == null)
+        {
+            return NotFound(new { message = "Resolution not found for this grievance" });
+        }
+
+        return Ok(resolution);
+    }
+
+    // ========================================
+    // FEEDBACK ENDPOINTS
+    // ========================================
+
+    /// <summary>
+    /// Submit feedback for a resolved/closed grievance (Citizen only)
+    /// </summary>
+    [HttpPost("{grievanceId}/feedback")]
+    [Authorize(Roles = "Citizen")]
+    public async Task<IActionResult> SubmitFeedback(
+        int grievanceId,
+        [FromBody] CreateFeedbackRequestDto request)
+    {
+        // Verify the grievance belongs to the citizen
+        var citizenId = GetCurrentUserId();
+        var grievance = await _grievanceService.GetGrievanceByIdAsync(grievanceId);
+        var grievanceDto = grievance as dynamic;
+        
+        if (grievanceDto?.CitizenId != citizenId)
+        {
+            return Forbid();
+        }
+
+        var feedbackId = await _feedbackService.CreateFeedbackAsync(
+            grievanceId,
+            request.Rating,
+            request.Comment);
+
+        return CreatedAtAction(
+            nameof(GetFeedbackByGrievanceId),
+            new { grievanceId },
+            new { feedbackId, message = "Feedback submitted successfully" });
+    }
+
+    /// <summary>
+    /// Get feedback for a specific grievance
+    /// </summary>
+    [HttpGet("{grievanceId}/feedback")]
+    public async Task<IActionResult> GetFeedbackByGrievanceId(int grievanceId)
+    {
+        // Apply authorization: Citizens can only view feedback on their own grievances
+        if (User.IsInRole("Citizen"))
+        {
+            var citizenId = GetCurrentUserId();
+            var grievance = await _grievanceService.GetGrievanceByIdAsync(grievanceId);
+            var grievanceDto = grievance as dynamic;
+            
+            if (grievanceDto?.CitizenId != citizenId)
+            {
+                return Forbid();
+            }
+        }
+
+        var feedback = await _feedbackService.GetFeedbackByGrievanceIdAsync(grievanceId);
+
+        if (feedback == null)
+        {
+            return NotFound(new { message = "Feedback not found for this grievance" });
+        }
+
+        return Ok(feedback);
+    }
+
+    // ========================================
+    // DASHBOARD & REPORT ENDPOINTS
+    // ========================================
+
+    /// <summary>
+    /// Get dashboard summary with key metrics
+    /// </summary>
+    [HttpGet("dashboard")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetDashboard(
+        [FromQuery] int? departmentId = null)
+    {
+        var userId = GetCurrentUserId();
+
+        var dashboard = await _reportService.GetDashboardSummaryAsync(departmentId, userId);
+
+        return Ok(dashboard);
+    }
+
+    /// <summary>
+    /// Get grievance status report with counts and percentages
+    /// </summary>
+    [HttpGet("reports/status")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetGrievanceStatusReport()
+    {
+        var report = await _reportService.GetGrievanceStatusReportAsync();
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get detailed list of grievances by status
+    /// </summary>
+    [HttpGet("reports/status/{status}")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetGrievancesByStatusDetailed(GrievanceStatus status)
+    {
+        var grievances = await _reportService.GetGrievancesByStatusDetailedAsync(status);
+
+        return Ok(grievances);
+    }
+
+    /// <summary>
+    /// Get department performance report
+    /// </summary>
+    [HttpGet("reports/department/{departmentId}/performance")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetDepartmentPerformanceReport(int departmentId)
+    {
+        var report = await _reportService.GetDepartmentPerformanceReportAsync(departmentId);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get performance reports for all departments
+    /// </summary>
+    [HttpGet("reports/departments/performance")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetAllDepartmentPerformanceReports()
+    {
+        var reports = await _reportService.GetAllDepartmentPerformanceReportsAsync();
+
+        return Ok(reports);
+    }
+
+    /// <summary>
+    /// Get category summary report
+    /// </summary>
+    [HttpGet("reports/category/{categoryId}/summary")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetCategorySummaryReport(int categoryId)
+    {
+        var report = await _reportService.GetCategorySummaryReportAsync(categoryId);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get summary reports for all categories
+    /// </summary>
+    [HttpGet("reports/categories/summary")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetAllCategorySummaryReports()
+    {
+        var reports = await _reportService.GetAllCategorySummaryReportsAsync();
+
+        return Ok(reports);
+    }
+
+    /// <summary>
+    /// Get overall resolution time report
+    /// </summary>
+    [HttpGet("reports/resolution-time")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetResolutionTimeReport()
+    {
+        var report = await _reportService.GetResolutionTimeReportAsync();
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get resolution time report by department
+    /// </summary>
+    [HttpGet("reports/resolution-time/department/{departmentId}")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetResolutionTimeReportByDepartment(int departmentId)
+    {
+        var report = await _reportService.GetResolutionTimeReportByDepartmentAsync(departmentId);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get resolution time report by category
+    /// </summary>
+    [HttpGet("reports/resolution-time/category/{categoryId}")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetResolutionTimeReportByCategory(int categoryId)
+    {
+        var report = await _reportService.GetResolutionTimeReportByCategoryAsync(categoryId);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get officer performance report
+    /// </summary>
+    [HttpGet("reports/officer/{officerId}/performance")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetOfficerPerformanceReport(int officerId)
+    {
+        var report = await _reportService.GetOfficerPerformanceReportAsync(officerId);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get top performing officers
+    /// </summary>
+    [HttpGet("reports/officers/top-performers")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetTopPerformingOfficers([FromQuery] int topCount = 10)
+    {
+        var report = await _reportService.GetTopPerformingOfficersAsync(topCount);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get grievance trend report (daily, weekly, or monthly)
+    /// </summary>
+    [HttpGet("reports/trends")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetGrievanceTrendReport(
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate,
+        [FromQuery] string groupBy = "day")
+    {
+        var report = await _reportService.GetGrievanceTrendReportAsync(startDate, endDate, groupBy);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get monthly grievance report
+    /// </summary>
+    [HttpGet("reports/monthly")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetMonthlyGrievanceReport(
+        [FromQuery] int year,
+        [FromQuery] int month)
+    {
+        var report = await _reportService.GetMonthlyGrievanceReportAsync(year, month);
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get overall feedback analytics report
+    /// </summary>
+    [HttpGet("reports/feedback/analytics")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetFeedbackAnalyticsReport()
+    {
+        var report = await _reportService.GetFeedbackAnalyticsReportAsync();
+
+        return Ok(report);
+    }
+
+    /// <summary>
+    /// Get feedback analytics by department
+    /// </summary>
+    [HttpGet("reports/feedback/analytics/department/{departmentId}")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetFeedbackAnalyticsByDepartment(int departmentId)
+    {
+        var report = await _reportService.GetFeedbackAnalyticsByDepartmentAsync(departmentId);
+
+        return Ok(report);
     }
 
     // Helper method to extract user ID from claims
