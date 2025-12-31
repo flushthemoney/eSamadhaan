@@ -29,4 +29,8 @@ public interface IGrievanceService
     Task<Dictionary<GrievanceStatus, int>> GetGrievanceCountByStatusAsync();
     Task<Dictionary<int, int>> GetGrievanceCountByDepartmentAsync();
     Task<Dictionary<int, int>> GetGrievanceCountByCategoryAsync();
+    
+    // Supervisory Officer specific methods
+    Task<IEnumerable<object>> GetEscalatedGrievancesAsync(int escalationThresholdDays = 7);
+    Task<IEnumerable<object>> GetSLABreachedGrievancesAsync(int slaDays = 15);
 }

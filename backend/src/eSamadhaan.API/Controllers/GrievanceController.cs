@@ -630,16 +630,32 @@ public class GrievanceController : ControllerBase
         return Ok(report);
     }
 
-    // Helper method to extract user ID from claims
-    private int GetCurrentUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            throw new UnauthorizedAccessException("User ID not found in token");
-        }
+    // ========================================
+    // SUPERVISORY OFFICER SPECIFIC ENDPOINTS
+    // ========================================
 
-        return userId;
+    /// <summary>
+    /// Get escalated grievances that require supervisory attention
+    /// </summary>
+    [HttpGet("escalated")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetEscalatedGrievances([FromQuery] int escalationThresholdDays = 7)
+    {
+        var escalatedGrievances = await _grievanceService.GetEscalatedGrievancesAsync(escalationThresholdDays);
+
+        return Ok(escalatedGrievances);
     }
+
+    /// <summary>
+    /// Get grievances with SLA breaches
+    /// </summary>
+    [HttpGet("sla-breaches")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetSLABreachedGrievances([FromQuery] int slaDays = 15)
+    {
+        var slaBreach = await _grievanceService.GetSLABreachedGrievancesAsync(slaDays);
+
+        return Ok(slaBreach);
+    }
+
 }

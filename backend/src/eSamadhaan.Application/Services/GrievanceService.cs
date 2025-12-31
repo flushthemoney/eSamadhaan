@@ -415,4 +415,103 @@ public class GrievanceService : IGrievanceService
 
         return dto;
     }
-}
+
+    // ========================================
+    // SUPERVISORY OFFICER SPECIFIC METHODS
+    // ========================================
+
+    public async Task<IEnumerable<object>> GetEscalatedGrievancesAsync(int escalationThresholdDays = 7)
+    {
+        var now = DateTime.UtcNow;
+        var escalationDate = now.AddDays(-escalationThresholdDays);
+
+        // LINQ query to find grievances that need escalation
+        var escalatedGrievances = _grievanceRepository.GetQueryable()
+            .Where(g => 
+                // Not yet resolved or closed
+                (g.CurrentStatus != GrievanceStatus.Resolved && g.CurrentStatus != GrievanceStatus.Closed) &&
+                // Either old grievances or stale assignments
+                (g.CreatedAt <= escalationDate || g.UpdatedAt <= escalationDate))
+            .OrderBy(g => g.CreatedAt)
+            .Select(g => new
+            {
+                Grievance = g,
+                DaysSinceSubmission = (int)(now - g.CreatedAt).TotalDays,
+                DaysSinceLastUpdate = (int)(now - g.UpdatedAt).TotalDays,
+                ActiveAssignment = g.Assignments.FirstOrDefault(a => a.IsActive)
+            })
+            .ToList();
+
+        // Map to DTO
+        return escalatedGrievances.Select(item => new EscalatedGrievanceDto
+        {
+            Id = item.Grievance.Id,
+            GrievanceNumber = item.Grievance.GrievanceNumber,
+            CitizenName = item.Grievance.Citizen?.Name ?? string.Empty,
+            CategoryName = item.Grievance.Category?.Name ?? string.Empty,
+            DepartmentName = item.Grievance.Department?.Name ?? string.Empty,
+            CurrentStatus = item.Grievance.CurrentStatus,
+            CreatedAt = item.Grievance.CreatedAt,
+            UpdatedAt = item.Grievance.UpdatedAt,
+            DaysSinceSubmission = item.DaysSinceSubmission,
+            DaysSinceLastUpdate = item.DaysSinceLastUpdate,
+            AssignedOfficerName = item.ActiveAssignment?.Officer?.Name,
+            HasSLABreach = item.DaysSinceSubmission > 15 // SLA default 15 days
+        }).ToList();
+    }
+
+    public async Task<IEnumerable<object>> GetSLABreachedGrievancesAsync(int slaDays = 15)
+    {
+        var now = DateTime.UtcNow;
+        var slaBreachDate = now.AddDays(-slaDays);
+
+        // LINQ query to find grievances with SLA breach
+        var breachedGrievances = _grievanceRepository.GetQueryable()
+            .Where(g => 
+                // Not yet resolved or closed
+                (g.CurrentStatus != GrievanceStatus.Resolved && g.CurrentStatus != GrievanceStatus.Closed) &&
+                // Created before SLA threshold
+                g.CreatedAt <= slaBreachDate)
+            .OrderBy(g => g.CreatedAt)
+            .Select(g => new
+            {
+                Grievance = g,
+                DaysSinceSubmission = (int)(now - g.CreatedAt).TotalDays,
+                DaysSinceLastUpdate = (int)(now - g.UpdatedAt).TotalDays,
+                ActiveAssignment = g.Assignments.FirstOrDefault(a => a.IsActive)
+            })
+            .ToList();
+
+        // Map to DTO with severity calculation
+        return breachedGrievances.Select(item =>
+        {
+            var breachByDays = item.DaysSinceSubmission - slaDays;
+            var severityLevel = CalculateSeverityLevel(breachByDays);
+
+            return new SLABreachDto
+            {
+                Id = item.Grievance.Id,
+                GrievanceNumber = item.Grievance.GrievanceNumber,
+                CitizenName = item.Grievance.Citizen?.Name ?? string.Empty,
+                CategoryName = item.Grievance.Category?.Name ?? string.Empty,
+                DepartmentName = item.Grievance.Department?.Name ?? string.Empty,
+                CurrentStatus = item.Grievance.CurrentStatus,
+                CreatedAt = item.Grievance.CreatedAt,
+                UpdatedAt = item.Grievance.UpdatedAt,
+                DaysSinceSubmission = item.DaysSinceSubmission,
+                DaysSinceLastUpdate = item.DaysSinceLastUpdate,
+                SLADays = slaDays,
+                BreachByDays = breachByDays,
+                AssignedOfficerName = item.ActiveAssignment?.Officer?.Name,
+                SeverityLevel = severityLevel
+            };
+        }).ToList();
+    }
+
+    private string CalculateSeverityLevel(int breachByDays)
+    {
+        if (breachByDays <= 3) return "Low";
+        if (breachByDays <= 7) return "Medium";
+        if (breachByDays <= 14) return "High";
+        return "Critical";
+    }
