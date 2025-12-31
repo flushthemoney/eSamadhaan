@@ -658,4 +658,16 @@ public class GrievanceController : ControllerBase
         return Ok(slaBreach);
     }
 
+    // Helper method to extract user ID from claims
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            throw new UnauthorizedAccessException("User ID not found in token");
+        }
+
+        return userId;
+    }
 }
