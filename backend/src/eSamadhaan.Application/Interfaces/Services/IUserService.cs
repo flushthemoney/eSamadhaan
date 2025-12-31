@@ -10,9 +10,9 @@ public interface IUserService
     Task<IEnumerable<UserDto>> GetUsersByDepartmentAsync(int departmentId);
     Task<IEnumerable<UserDto>> GetUsersByRoleAsync(string role);
     Task<IEnumerable<UserDto>> GetActiveUsersAsync();
+    Task<UserDto> CreateUserAsync(CreateUserRequestDto request);
     Task UpdateUserAsync(int id, string name, string email, string? role, int? departmentId);
-    Task DeactivateUserAsync(int id);
-    Task ActivateUserAsync(int id);
+    Task UpdateUserStatusAsync(int id, bool isActive);
     Task<Dictionary<string, int>> GetUserCountByRoleAsync();
     Task<Dictionary<int, int>> GetOfficerCountByDepartmentAsync();
 }

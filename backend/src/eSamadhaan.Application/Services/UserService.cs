@@ -9,13 +9,16 @@ public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
     private readonly IDepartmentRepository _departmentRepository;
+    private readonly IPasswordHasher _passwordHasher;
 
     public UserService(
         IUserRepository userRepository,
-        IDepartmentRepository departmentRepository)
+        IDepartmentRepository departmentRepository,
+        IPasswordHasher passwordHasher)
     {
         _userRepository = userRepository;
         _departmentRepository = departmentRepository;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<UserDto> GetUserByIdAsync(int id)
@@ -79,6 +82,73 @@ public class UserService : IUserService
         return users.Select(MapToDto);
     }
 
+    public async Task<UserDto> CreateUserAsync(CreateUserRequestDto request)
+    {
+        // Validate inputs
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            throw new ValidationException("Name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            throw new ValidationException("Email is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ValidationException("Password is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Role))
+        {
+            throw new ValidationException("Role is required.");
+        }
+
+        // Validate role
+        var validRoles = new[] { "SystemAdmin", "DepartmentOfficer", "SupervisoryOfficer", "Citizen" };
+        if (!validRoles.Contains(request.Role))
+        {
+            throw new ValidationException($"Invalid role. Valid roles are: {string.Join(", ", validRoles)}");
+        }
+
+        // For officers, department is required
+        if ((request.Role == "DepartmentOfficer" || request.Role == "SupervisoryOfficer") && !request.DepartmentId.HasValue)
+        {
+            throw new ValidationException($"{request.Role} must be associated with a department.");
+        }
+
+        // Check if email already exists
+        if (await _userRepository.EmailExistsAsync(request.Email.ToLower()))
+        {
+            throw new DuplicateException("User", "Email", request.Email);
+        }
+
+        // Validate department if provided
+        if (request.DepartmentId.HasValue)
+        {
+            if (!await _departmentRepository.ExistsAsync(request.DepartmentId.Value))
+            {
+                throw new NotFoundException("Department", request.DepartmentId.Value);
+            }
+        }
+
+        // Create user entity
+        var user = new Domain.Entities.User
+        {
+            Name = request.Name,
+            Email = request.Email.ToLower(),
+            PasswordHash = _passwordHasher.HashPassword(request.Password),
+            Role = request.Role,
+            DepartmentId = request.DepartmentId,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        var createdUser = await _userRepository.CreateAsync(user);
+        return MapToDto(createdUser);
+    }
+
     public async Task UpdateUserAsync(int id, string name, string email, string? role, int? departmentId)
     {
         var user = await _userRepository.GetByIdAsync(id);
@@ -140,7 +210,7 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
     }
 
-    public async Task DeactivateUserAsync(int id)
+    public async Task UpdateUserStatusAsync(int id, bool isActive)
     {
         var user = await _userRepository.GetByIdAsync(id);
         
@@ -149,30 +219,12 @@ public class UserService : IUserService
             throw new NotFoundException("User", id);
         }
 
-        if (!user.IsActive)
+        if (user.IsActive == isActive)
         {
-            throw new BusinessRuleViolationException("User is already inactive.");
+            throw new BusinessRuleViolationException($"User is already {(isActive ? "active" : "inactive")}.");
         }
 
-        user.IsActive = false;
-        await _userRepository.UpdateAsync(user);
-    }
-
-    public async Task ActivateUserAsync(int id)
-    {
-        var user = await _userRepository.GetByIdAsync(id);
-        
-        if (user == null)
-        {
-            throw new NotFoundException("User", id);
-        }
-
-        if (user.IsActive)
-        {
-            throw new BusinessRuleViolationException("User is already active.");
-        }
-
-        user.IsActive = true;
+        user.IsActive = isActive;
         await _userRepository.UpdateAsync(user);
     }
 

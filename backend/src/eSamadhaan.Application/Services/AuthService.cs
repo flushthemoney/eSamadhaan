@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -15,11 +14,13 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
+    private readonly IPasswordHasher _passwordHasher;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration)
+    public AuthService(IUserRepository userRepository, IConfiguration configuration, IPasswordHasher passwordHasher)
     {
         _userRepository = userRepository;
         _configuration = configuration;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<string> LoginAsync(string email, string password)
@@ -36,7 +37,7 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("User account is inactive.");
         }
 
-        if (!VerifyPassword(password, user.PasswordHash))
+        if (!_passwordHasher.VerifyPassword(password, user.PasswordHash))
         {
             throw new UnauthorizedException("Invalid email or password.");
         }
@@ -90,7 +91,7 @@ public class AuthService : IAuthService
         {
             Name = name,
             Email = email.ToLower(),
-            PasswordHash = HashPassword(password),
+            PasswordHash = _passwordHasher.HashPassword(password),
             Role = role,
             DepartmentId = departmentId,
             IsActive = true,
@@ -110,7 +111,7 @@ public class AuthService : IAuthService
             return false;
         }
 
-        return VerifyPassword(password, user.PasswordHash);
+        return _passwordHasher.VerifyPassword(password, user.PasswordHash);
     }
 
     public async Task ChangePasswordAsync(int userId, string currentPassword, string newPassword)
@@ -122,7 +123,7 @@ public class AuthService : IAuthService
             throw new NotFoundException("User", userId);
         }
 
-        if (!VerifyPassword(currentPassword, user.PasswordHash))
+        if (!_passwordHasher.VerifyPassword(currentPassword, user.PasswordHash))
         {
             throw new UnauthorizedException("Current password is incorrect.");
         }
@@ -132,7 +133,7 @@ public class AuthService : IAuthService
             throw new ValidationException("New password must be at least 6 characters long.");
         }
 
-        user.PasswordHash = HashPassword(newPassword);
+        user.PasswordHash = _passwordHasher.HashPassword(newPassword);
         await _userRepository.UpdateAsync(user);
     }
 
@@ -169,42 +170,5 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private string HashPassword(string password)
-    {
-        using var hmac = new HMACSHA512();
-        var salt = hmac.Key;
-        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-        
-        // Combine salt and hash
-        var hashBytes = new byte[salt.Length + hash.Length];
-        Array.Copy(salt, 0, hashBytes, 0, salt.Length);
-        Array.Copy(hash, 0, hashBytes, salt.Length, hash.Length);
-        
-        return Convert.ToBase64String(hashBytes);
-    }
-
-    private bool VerifyPassword(string password, string storedHash)
-    {
-        var hashBytes = Convert.FromBase64String(storedHash);
-        
-        // Extract salt (first 128 bytes for HMACSHA512)
-        var salt = new byte[128];
-        Array.Copy(hashBytes, 0, salt, 0, 128);
-        
-        using var hmac = new HMACSHA512(salt);
-        var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-        
-        // Compare computed hash with stored hash
-        for (int i = 0; i < computedHash.Length; i++)
-        {
-            if (hashBytes[i + 128] != computedHash[i])
-            {
-                return false;
-            }
-        }
-        
-        return true;
     }
 }

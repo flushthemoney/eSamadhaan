@@ -41,6 +41,7 @@ builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
 // ========================================
 // 3. Application Service Registration
 // ========================================
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
