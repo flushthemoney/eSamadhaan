@@ -29,11 +29,10 @@ public class GrievanceConfiguration : IEntityTypeConfiguration<Grievance>
         builder.Property(g => g.DepartmentId)
             .IsRequired();
 
-        // Enum to int mapping
+        // Enum to int mapping - no database default, status set explicitly in application
         builder.Property(g => g.CurrentStatus)
             .IsRequired()
-            .HasConversion<int>()
-            .HasDefaultValue(GrievanceStatus.Submitted);
+            .HasConversion<int>();
 
         builder.Property(g => g.CreatedAt)
             .IsRequired()
