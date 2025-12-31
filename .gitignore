@@ -23,3 +23,4 @@ obj/
 # Additional stuff
 backend/docs
 appsettings.Development.json
+Authentication.http

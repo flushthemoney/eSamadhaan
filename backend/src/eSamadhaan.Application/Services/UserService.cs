@@ -18,7 +18,7 @@ public class UserService : IUserService
         _departmentRepository = departmentRepository;
     }
 
-    public async Task<object?> GetUserByIdAsync(int id)
+    public async Task<UserDto> GetUserByIdAsync(int id)
     {
         var user = await _userRepository.GetByIdAsync(id);
         
@@ -30,7 +30,7 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
-    public async Task<object?> GetUserByEmailAsync(string email)
+    public async Task<UserDto> GetUserByEmailAsync(string email)
     {
         var user = await _userRepository.GetByEmailAsync(email);
         
@@ -42,13 +42,13 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
-    public async Task<IEnumerable<object>> GetAllUsersAsync()
+    public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
     {
         var users = await _userRepository.GetAllAsync();
         return users.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<object>> GetUsersByDepartmentAsync(int departmentId)
+    public async Task<IEnumerable<UserDto>> GetUsersByDepartmentAsync(int departmentId)
     {
         // Validate department exists
         if (!await _departmentRepository.ExistsAsync(departmentId))
@@ -60,7 +60,7 @@ public class UserService : IUserService
         return users.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<object>> GetUsersByRoleAsync(string role)
+    public async Task<IEnumerable<UserDto>> GetUsersByRoleAsync(string role)
     {
         // Validate role
         var validRoles = new[] { "SystemAdmin", "DepartmentOfficer", "SupervisoryOfficer", "Citizen" };
@@ -73,7 +73,7 @@ public class UserService : IUserService
         return users.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<object>> GetActiveUsersAsync()
+    public async Task<IEnumerable<UserDto>> GetActiveUsersAsync()
     {
         var users = await _userRepository.GetActiveUsersAsync();
         return users.Select(MapToDto);

@@ -4,12 +4,12 @@ namespace eSamadhaan.Application.Interfaces.Services;
 
 public interface IUserService
 {
-    Task<object?> GetUserByIdAsync(int id);
-    Task<object?> GetUserByEmailAsync(string email);
-    Task<IEnumerable<object>> GetAllUsersAsync();
-    Task<IEnumerable<object>> GetUsersByDepartmentAsync(int departmentId);
-    Task<IEnumerable<object>> GetUsersByRoleAsync(string role);
-    Task<IEnumerable<object>> GetActiveUsersAsync();
+    Task<UserDto> GetUserByIdAsync(int id);
+    Task<UserDto> GetUserByEmailAsync(string email);
+    Task<IEnumerable<UserDto>> GetAllUsersAsync();
+    Task<IEnumerable<UserDto>> GetUsersByDepartmentAsync(int departmentId);
+    Task<IEnumerable<UserDto>> GetUsersByRoleAsync(string role);
+    Task<IEnumerable<UserDto>> GetActiveUsersAsync();
     Task UpdateUserAsync(int id, string name, string email, string? role, int? departmentId);
     Task DeactivateUserAsync(int id);
     Task ActivateUserAsync(int id);
