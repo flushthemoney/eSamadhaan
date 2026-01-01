@@ -23,12 +23,23 @@ public class GrievanceCategoryConfiguration : IEntityTypeConfiguration<Grievance
             .IsRequired()
             .HasMaxLength(500);
 
+        builder.Property(gc => gc.DepartmentId)
+            .IsRequired();
+
         // Indexes
         builder.HasIndex(gc => gc.Name)
             .IsUnique()
             .HasDatabaseName("IX_GrievanceCategories_Name");
 
+        builder.HasIndex(gc => gc.DepartmentId)
+            .HasDatabaseName("IX_GrievanceCategories_DepartmentId");
+
         // Relationships
+        builder.HasOne(gc => gc.Department)
+            .WithMany(d => d.Categories)
+            .HasForeignKey(gc => gc.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(gc => gc.Grievances)
             .WithOne(g => g.Category)
             .HasForeignKey(g => g.CategoryId)

@@ -1,3 +1,4 @@
+using eSamadhaan.Application.DTOs.Category;
 using eSamadhaan.Application.DTOs.Department;
 using eSamadhaan.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +12,14 @@ namespace eSamadhaan.API.Controllers;
 public class DepartmentController : ControllerBase
 {
     private readonly IDepartmentService _departmentService;
+    private readonly ICategoryService _categoryService;
 
-    public DepartmentController(IDepartmentService departmentService)
+    public DepartmentController(
+        IDepartmentService departmentService,
+        ICategoryService categoryService)
     {
         _departmentService = departmentService;
+        _categoryService = categoryService;
     }
 
     /// <summary>
@@ -107,5 +112,49 @@ public class DepartmentController : ControllerBase
             message = "Department deleted successfully",
             departmentId = id
         });
+    }
+
+    /// <summary>
+    /// Get all categories for a specific department
+    /// </summary>
+    /// <remarks>
+    /// All authenticated users can view department categories.
+    /// </remarks>
+    [HttpGet("{departmentId}/categories")]
+    [Authorize]
+    public async Task<IActionResult> GetDepartmentCategories(int departmentId)
+    {
+        var categories = await _categoryService.GetCategoriesByDepartmentAsync(departmentId);
+        return Ok(categories);
+    }
+
+    /// <summary>
+    /// Create a category for a specific department
+    /// </summary>
+    /// <remarks>
+    /// Only SystemAdmin and DepartmentOfficers can create categories for their department.
+    /// DepartmentOfficers can only create categories for their own department.
+    /// </remarks>
+    [HttpPost("{departmentId}/categories")]
+    [Authorize(Roles = "SystemAdmin,DepartmentOfficer")]
+    public async Task<IActionResult> CreateDepartmentCategory(
+        int departmentId,
+        [FromBody] CreateDepartmentCategoryRequestDto request)
+    {
+        // Create the category with the department ID from route
+        var createRequest = new CreateCategoryRequestDto
+        {
+            Name = request.Name,
+            Description = request.Description,
+            DepartmentId = departmentId
+        };
+
+        var category = await _categoryService.CreateCategoryAsync(createRequest);
+
+        return CreatedAtAction(
+            nameof(GetDepartmentCategories),
+            new { departmentId = departmentId },
+            category
+        );
     }
 }

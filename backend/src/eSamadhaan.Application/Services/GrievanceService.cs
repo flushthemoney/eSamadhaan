@@ -42,7 +42,8 @@ public class GrievanceService : IGrievanceService
         }
 
         // Validate category exists
-        if (!await _categoryRepository.ExistsAsync(categoryId))
+        var category = await _categoryRepository.GetByIdAsync(categoryId);
+        if (category == null)
         {
             throw new NotFoundException("Category", categoryId);
         }
@@ -51,6 +52,12 @@ public class GrievanceService : IGrievanceService
         if (!await _departmentRepository.ExistsAsync(departmentId))
         {
             throw new NotFoundException("Department", departmentId);
+        }
+
+        // Validate category belongs to the selected department
+        if (category.DepartmentId != departmentId)
+        {
+            throw new ValidationException($"Category '{category.Name}' does not belong to the selected department.");
         }
 
         // Validate description

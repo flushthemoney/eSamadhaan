@@ -24,6 +24,13 @@ public class GrievanceCategoryRepository : IGrievanceCategoryRepository
         return await _context.GrievanceCategories.ToListAsync();
     }
 
+    public async Task<IEnumerable<GrievanceCategory>> GetByDepartmentIdAsync(int departmentId)
+    {
+        return await _context.GrievanceCategories
+            .Where(c => c.DepartmentId == departmentId)
+            .ToListAsync();
+    }
+
     public async Task<GrievanceCategory> CreateAsync(GrievanceCategory category)
     {
         _context.GrievanceCategories.Add(category);

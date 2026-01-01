@@ -9,4 +9,5 @@ public class Department
     // Navigation properties
     public ICollection<User> Officers { get; set; } = new List<User>();
     public ICollection<Grievance> Grievances { get; set; } = new List<Grievance>();
+    public ICollection<GrievanceCategory> Categories { get; set; } = new List<GrievanceCategory>();
 }

@@ -10,13 +10,16 @@ public class CategoryService : ICategoryService
 {
     private readonly IGrievanceCategoryRepository _categoryRepository;
     private readonly IGrievanceRepository _grievanceRepository;
+    private readonly IDepartmentRepository _departmentRepository;
 
     public CategoryService(
         IGrievanceCategoryRepository categoryRepository,
-        IGrievanceRepository grievanceRepository)
+        IGrievanceRepository grievanceRepository,
+        IDepartmentRepository departmentRepository)
     {
         _categoryRepository = categoryRepository;
         _grievanceRepository = grievanceRepository;
+        _departmentRepository = departmentRepository;
     }
 
     public async Task<CategoryDto> CreateCategoryAsync(CreateCategoryRequestDto request)
@@ -32,11 +35,18 @@ public class CategoryService : ICategoryService
             throw new ValidationException("Category description is required.");
         }
 
+        // Validate department exists
+        if (!await _departmentRepository.ExistsAsync(request.DepartmentId))
+        {
+            throw new NotFoundException("Department", request.DepartmentId);
+        }
+
         // Create category
         var category = new GrievanceCategory
         {
             Name = request.Name,
-            Description = request.Description
+            Description = request.Description,
+            DepartmentId = request.DepartmentId
         };
 
         var createdCategory = await _categoryRepository.CreateAsync(category);
@@ -58,6 +68,25 @@ public class CategoryService : ICategoryService
     public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
     {
         var categories = await _categoryRepository.GetAllAsync();
+        var dtos = new List<CategoryDto>();
+        
+        foreach (var category in categories)
+        {
+            dtos.Add(await MapToDtoAsync(category));
+        }
+        
+        return dtos;
+    }
+
+    public async Task<IEnumerable<CategoryDto>> GetCategoriesByDepartmentAsync(int departmentId)
+    {
+        // Validate department exists
+        if (!await _departmentRepository.ExistsAsync(departmentId))
+        {
+            throw new NotFoundException("Department", departmentId);
+        }
+
+        var categories = await _categoryRepository.GetByDepartmentIdAsync(departmentId);
         var dtos = new List<CategoryDto>();
         
         foreach (var category in categories)
@@ -123,11 +152,15 @@ public class CategoryService : ICategoryService
     {
         var grievanceCount = await _grievanceRepository.CountByCategoryAsync(category.Id);
         
+        var department = await _departmentRepository.GetByIdAsync(category.DepartmentId);
+        
         return new CategoryDto
         {
             Id = category.Id,
             Name = category.Name,
             Description = category.Description,
+            DepartmentId = category.DepartmentId,
+            DepartmentName = department?.Name ?? string.Empty,
             GrievanceCount = grievanceCount
         };
     }
