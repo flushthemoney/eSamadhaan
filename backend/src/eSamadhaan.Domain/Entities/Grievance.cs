@@ -14,6 +14,11 @@ public class Grievance
     public GrievanceStatus CurrentStatus { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    
+    // Escalation properties
+    public bool IsEscalated { get; set; } = false;
+    public DateTime? EscalatedAt { get; set; }
+    public string? EscalationReason { get; set; }
 
     // Navigation properties
     public User Citizen { get; set; } = null!;

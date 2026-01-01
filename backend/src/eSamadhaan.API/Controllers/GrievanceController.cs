@@ -658,6 +658,36 @@ public class GrievanceController : ControllerBase
         return Ok(slaBreach);
     }
 
+    /// <summary>
+    /// Escalate a grievance (Citizen only)
+    /// </summary>
+    [HttpPost("{grievanceId}/escalate")]
+    [Authorize(Roles = "Citizen")]
+    public async Task<IActionResult> EscalateGrievance(
+        int grievanceId,
+        [FromBody] EscalateGrievanceRequestDto request)
+    {
+        var citizenId = GetCurrentUserId();
+
+        await _grievanceService.EscalateGrievanceAsync(grievanceId, citizenId, request.Reason);
+
+        return Ok(new { message = "Grievance escalated successfully" });
+    }
+
+    /// <summary>
+    /// Check if a grievance can be escalated (Citizen only)
+    /// </summary>
+    [HttpGet("{grievanceId}/can-escalate")]
+    [Authorize(Roles = "Citizen")]
+    public async Task<IActionResult> CanEscalateGrievance(int grievanceId)
+    {
+        var citizenId = GetCurrentUserId();
+
+        var canEscalate = await _grievanceService.CanEscalateGrievanceAsync(grievanceId, citizenId);
+
+        return Ok(new { canEscalate });
+    }
+
     // Helper method to extract user ID from claims
     private int GetCurrentUserId()
     {

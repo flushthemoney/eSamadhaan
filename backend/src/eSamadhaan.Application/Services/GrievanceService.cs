@@ -430,21 +430,18 @@ public class GrievanceService : IGrievanceService
     public async Task<IEnumerable<object>> GetEscalatedGrievancesAsync(int escalationThresholdDays = 7)
     {
         var now = DateTime.UtcNow;
-        var escalationDate = now.AddDays(-escalationThresholdDays);
 
-        // LINQ query to find grievances that need escalation
+        // LINQ query to find escalated grievances
         var escalatedGrievances = _grievanceRepository.GetQueryable()
             .Where(g => 
-                // Not yet resolved or closed
-                (g.CurrentStatus != GrievanceStatus.Resolved && g.CurrentStatus != GrievanceStatus.Closed) &&
-                // Either old grievances or stale assignments
-                (g.CreatedAt <= escalationDate || g.UpdatedAt <= escalationDate))
-            .OrderBy(g => g.CreatedAt)
+                // Filter by IsEscalated flag
+                g.IsEscalated)
+            .OrderBy(g => g.EscalatedAt)
             .Select(g => new
             {
                 Grievance = g,
                 DaysSinceSubmission = (int)(now - g.CreatedAt).TotalDays,
-                DaysSinceLastUpdate = (int)(now - g.UpdatedAt).TotalDays,
+                DaysSinceEscalation = g.EscalatedAt.HasValue ? (int)(now - g.EscalatedAt.Value).TotalDays : 0,
                 ActiveAssignment = g.Assignments.FirstOrDefault(a => a.IsActive)
             })
             .ToList();
@@ -461,7 +458,7 @@ public class GrievanceService : IGrievanceService
             CreatedAt = item.Grievance.CreatedAt,
             UpdatedAt = item.Grievance.UpdatedAt,
             DaysSinceSubmission = item.DaysSinceSubmission,
-            DaysSinceLastUpdate = item.DaysSinceLastUpdate,
+            DaysSinceLastUpdate = item.DaysSinceEscalation,
             AssignedOfficerName = item.ActiveAssignment?.Officer?.Name,
             HasSLABreach = item.DaysSinceSubmission > 15 // SLA default 15 days
         }).ToList();
@@ -521,5 +518,71 @@ public class GrievanceService : IGrievanceService
         if (breachByDays <= 7) return "Medium";
         if (breachByDays <= 14) return "High";
         return "Critical";
+    }
+
+    public async Task<bool> CanEscalateGrievanceAsync(int grievanceId, int citizenId)
+    {
+        var grievance = await _grievanceRepository.GetByIdAsync(grievanceId);
+        
+        if (grievance == null)
+            return false;
+        
+        // Check if citizen owns the grievance
+        if (grievance.CitizenId != citizenId)
+            return false;
+        
+        // Check if already escalated
+        if (grievance.IsEscalated)
+            return false;
+        
+        // Check if minimum 7 days have elapsed
+        var daysSinceCreation = (DateTime.UtcNow - grievance.CreatedAt).TotalDays;
+        if (daysSinceCreation < 7)
+            return false;
+        
+        return true;
+    }
+
+    public async Task EscalateGrievanceAsync(int grievanceId, int citizenId, string reason)
+    {
+        var grievance = await _grievanceRepository.GetByIdAsync(grievanceId);
+        
+        if (grievance == null)
+        {
+            throw new NotFoundException("Grievance", grievanceId);
+        }
+        
+        // Check if citizen owns the grievance
+        if (grievance.CitizenId != citizenId)
+        {
+            throw new UnauthorizedException("You can only escalate your own grievances.");
+        }
+        
+        // Check if already escalated
+        if (grievance.IsEscalated)
+        {
+            throw new BusinessRuleViolationException("Grievance has already been escalated.");
+        }
+        
+        // Check if minimum 7 days have elapsed
+        var daysSinceCreation = (DateTime.UtcNow - grievance.CreatedAt).TotalDays;
+        if (daysSinceCreation < 7)
+        {
+            throw new BusinessRuleViolationException($"Grievance can only be escalated after 7 days. Current age: {Math.Floor(daysSinceCreation)} days.");
+        }
+        
+        // Validate reason
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ValidationException("Escalation reason is required.");
+        }
+        
+        // Escalate the grievance
+        grievance.IsEscalated = true;
+        grievance.EscalatedAt = DateTime.UtcNow;
+        grievance.EscalationReason = reason;
+        grievance.UpdatedAt = DateTime.UtcNow;
+        
+        await _grievanceRepository.UpdateAsync(grievance);
     }
 }

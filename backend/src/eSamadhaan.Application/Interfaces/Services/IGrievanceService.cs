@@ -33,4 +33,8 @@ public interface IGrievanceService
     // Supervisory Officer specific methods
     Task<IEnumerable<object>> GetEscalatedGrievancesAsync(int escalationThresholdDays = 7);
     Task<IEnumerable<object>> GetSLABreachedGrievancesAsync(int slaDays = 15);
+    
+    // Citizen escalation
+    Task EscalateGrievanceAsync(int grievanceId, int citizenId, string reason);
+    Task<bool> CanEscalateGrievanceAsync(int grievanceId, int citizenId);
 }
