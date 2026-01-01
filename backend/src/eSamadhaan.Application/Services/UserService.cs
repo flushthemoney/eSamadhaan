@@ -112,8 +112,8 @@ public class UserService : IUserService
             throw new ValidationException($"Invalid role. Valid roles are: {string.Join(", ", validRoles)}");
         }
 
-        // For officers, department is required
-        if ((request.Role == "DepartmentOfficer" || request.Role == "SupervisoryOfficer") && !request.DepartmentId.HasValue)
+        // For DepartmentOfficer, department is required
+        if (request.Role == "DepartmentOfficer" && !request.DepartmentId.HasValue)
         {
             throw new ValidationException($"{request.Role} must be associated with a department.");
         }
@@ -185,8 +185,8 @@ public class UserService : IUserService
                 throw new ValidationException($"Invalid role. Valid roles are: {string.Join(", ", validRoles)}");
             }
 
-            // For officers, department is required
-            if ((role == "DepartmentOfficer" || role == "SupervisoryOfficer") && !departmentId.HasValue)
+            // For DepartmentOfficer, department is required
+            if (role == "DepartmentOfficer" && !departmentId.HasValue)
             {
                 throw new ValidationException($"{role} must be associated with a department.");
             }
@@ -255,9 +255,10 @@ public class UserService : IUserService
     {
         var users = await _userRepository.GetAllAsync();
         
-        // LINQ aggregation: Count officers (DepartmentOfficer and SupervisoryOfficer) grouped by department
+        // LINQ aggregation: Count DepartmentOfficers grouped by department
+        // Note: SupervisoryOfficers are independent and not tied to specific departments
         return users
-            .Where(u => (u.Role == "DepartmentOfficer" || u.Role == "SupervisoryOfficer") && u.DepartmentId.HasValue)
+            .Where(u => u.Role == "DepartmentOfficer" && u.DepartmentId.HasValue)
             .GroupBy(u => u.DepartmentId!.Value)
             .Select(group => new { DepartmentId = group.Key, Count = group.Count() })
             .ToDictionary(x => x.DepartmentId, x => x.Count);

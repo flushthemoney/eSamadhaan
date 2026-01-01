@@ -81,8 +81,8 @@ public class AuthService : IAuthService
             throw new ValidationException($"Invalid role. Valid roles are: {string.Join(", ", validRoles)}");
         }
 
-        // For officers, department is required
-        if ((role == "DepartmentOfficer" || role == "SupervisoryOfficer") && !departmentId.HasValue)
+        // For DepartmentOfficer, department is required
+        if (role == "DepartmentOfficer" && !departmentId.HasValue)
         {
             throw new ValidationException($"{role} must be associated with a department.");
         }

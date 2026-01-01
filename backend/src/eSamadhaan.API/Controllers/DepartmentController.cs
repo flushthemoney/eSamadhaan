@@ -3,23 +3,27 @@ using eSamadhaan.Application.DTOs.Department;
 using eSamadhaan.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace eSamadhaan.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "SystemAdmin")]
+[Authorize]
 public class DepartmentController : ControllerBase
 {
     private readonly IDepartmentService _departmentService;
     private readonly ICategoryService _categoryService;
+    private readonly IUserService _userService;
 
     public DepartmentController(
         IDepartmentService departmentService,
-        ICategoryService categoryService)
+        ICategoryService categoryService,
+        IUserService userService)
     {
         _departmentService = departmentService;
         _categoryService = categoryService;
+        _userService = userService;
     }
 
     /// <summary>
@@ -29,6 +33,7 @@ public class DepartmentController : ControllerBase
     /// Only SystemAdmin can create departments.
     /// </remarks>
     [HttpPost]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentRequestDto request)
     {
         var departmentId = await _departmentService.CreateDepartmentAsync(
@@ -54,6 +59,7 @@ public class DepartmentController : ControllerBase
     /// Only SystemAdmin can update departments.
     /// </remarks>
     [HttpPut("{id}")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<IActionResult> UpdateDepartment(int id, [FromBody] UpdateDepartmentRequestDto request)
     {
         await _departmentService.UpdateDepartmentAsync(
@@ -76,6 +82,7 @@ public class DepartmentController : ControllerBase
     /// Only SystemAdmin can view all departments.
     /// </remarks>
     [HttpGet]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<IActionResult> GetAllDepartments()
     {
         var departments = await _departmentService.GetAllDepartmentsAsync();
@@ -89,6 +96,7 @@ public class DepartmentController : ControllerBase
     /// Only SystemAdmin can view department details.
     /// </remarks>
     [HttpGet("{id}")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<IActionResult> GetDepartmentById(int id)
     {
         var department = await _departmentService.GetDepartmentByIdAsync(id);
@@ -103,6 +111,7 @@ public class DepartmentController : ControllerBase
     /// Deletion is prevented if the department has associated grievances.
     /// </remarks>
     [HttpDelete("{id}")]
+    [Authorize(Roles = "SystemAdmin")]
     public async Task<IActionResult> DeleteDepartment(int id)
     {
         await _departmentService.DeleteDepartmentAsync(id);
@@ -121,7 +130,6 @@ public class DepartmentController : ControllerBase
     /// All authenticated users can view department categories.
     /// </remarks>
     [HttpGet("{departmentId}/categories")]
-    [Authorize]
     public async Task<IActionResult> GetDepartmentCategories(int departmentId)
     {
         var categories = await _categoryService.GetCategoriesByDepartmentAsync(departmentId);
@@ -141,6 +149,32 @@ public class DepartmentController : ControllerBase
         int departmentId,
         [FromBody] CreateDepartmentCategoryRequestDto request)
     {
+        // Get current user ID from claims
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(new { message = "User ID not found in token" });
+        }
+
+        // Get current user role
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        // If user is DepartmentOfficer, verify they belong to this department
+        if (userRole == "DepartmentOfficer")
+        {
+            var user = await _userService.GetUserByIdAsync(userId);
+            
+            if (!user.DepartmentId.HasValue)
+            {
+                return BadRequest(new { message = "Officer must be assigned to a department" });
+            }
+
+            if (user.DepartmentId.Value != departmentId)
+            {
+                return Forbid(); // 403 Forbidden - User doesn't have access to this department
+            }
+        }
+
         // Create the category with the department ID from route
         var createRequest = new CreateCategoryRequestDto
         {
