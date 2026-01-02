@@ -12,12 +12,10 @@ namespace eSamadhaan.API.Controllers;
 public class CategoryController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
-    private readonly IUserService _userService;
 
-    public CategoryController(ICategoryService categoryService, IUserService userService)
+    public CategoryController(ICategoryService categoryService)
     {
         _categoryService = categoryService;
-        _userService = userService;
     }
 
     /// <summary>
@@ -31,7 +29,7 @@ public class CategoryController : ControllerBase
     [Authorize(Roles = "SystemAdmin,DepartmentOfficer")]
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequestDto request)
     {
-        if (!await ValidateDepartmentAccess(request.DepartmentId))
+        if (!ValidateDepartmentAccess(request.DepartmentId))
         {
             return Forbid();
         }
@@ -58,7 +56,7 @@ public class CategoryController : ControllerBase
     {
         var category = await _categoryService.GetCategoryByIdAsync(id);
         
-        if (!await ValidateDepartmentAccess(category.DepartmentId))
+        if (!ValidateDepartmentAccess(category.DepartmentId))
         {
             return Forbid();
         }
@@ -101,7 +99,7 @@ public class CategoryController : ControllerBase
     {
         var category = await _categoryService.GetCategoryByIdAsync(id);
         
-        if (!await ValidateDepartmentAccess(category.DepartmentId))
+        if (!ValidateDepartmentAccess(category.DepartmentId))
         {
             return Forbid();
         }
@@ -111,14 +109,8 @@ public class CategoryController : ControllerBase
     }
 
     // Helper method to validate department officer access
-    private async Task<bool> ValidateDepartmentAccess(int departmentId)
+    private bool ValidateDepartmentAccess(int departmentId)
     {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-        {
-            return false;
-        }
-
         var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
         
         // SystemAdmin has access to all departments
@@ -130,8 +122,12 @@ public class CategoryController : ControllerBase
         // DepartmentOfficer can only access their own department
         if (userRole == "DepartmentOfficer")
         {
-            var user = await _userService.GetUserByIdAsync(userId);
-            return user.DepartmentId.HasValue && user.DepartmentId.Value == departmentId;
+            var userDeptIdClaim = User.FindFirst("departmentId")?.Value;
+            if (string.IsNullOrEmpty(userDeptIdClaim) || !int.TryParse(userDeptIdClaim, out var userDepartmentId))
+            {
+                return false;
+            }
+            return userDepartmentId == departmentId;
         }
 
         return false;

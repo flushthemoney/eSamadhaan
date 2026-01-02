@@ -42,7 +42,7 @@ public class AuthService : IAuthService
             throw new UnauthorizedException("Invalid email or password.");
         }
 
-        return GenerateToken(user.Id, user.Email, user.Role);
+        return GenerateToken(user.Id, user.Email, user.Role, user.DepartmentId);
     }
 
     public async Task<int> RegisterUserAsync(string name, string email, string password, string role, int? departmentId)
@@ -142,7 +142,7 @@ public class AuthService : IAuthService
         return !await _userRepository.EmailExistsAsync(email);
     }
 
-    public string GenerateToken(int userId, string email, string role)
+    public string GenerateToken(int userId, string email, string role, int? departmentId)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured.");
@@ -150,13 +150,20 @@ public class AuthService : IAuthService
         var audience = jwtSettings["Audience"] ?? "eSamadhaan";
         var expiryMinutes = int.Parse(jwtSettings["ExpiryMinutes"] ?? "60");
 
-        var claims = new[]
+        var claimsList = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, email),
             new Claim(ClaimTypes.Role, role),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (departmentId.HasValue)
+        {
+            claimsList.Add(new Claim("departmentId", departmentId.Value.ToString()));
+        }
+
+        var claims = claimsList.ToArray();
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

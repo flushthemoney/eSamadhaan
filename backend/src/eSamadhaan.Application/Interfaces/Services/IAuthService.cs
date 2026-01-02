@@ -7,5 +7,5 @@ public interface IAuthService
     Task<bool> ValidateUserAsync(string email, string password);
     Task ChangePasswordAsync(int userId, string currentPassword, string newPassword);
     Task<bool> IsEmailAvailableAsync(string email);
-    string GenerateToken(int userId, string email, string role);
+    string GenerateToken(int userId, string email, string role, int? departmentId);
 }
