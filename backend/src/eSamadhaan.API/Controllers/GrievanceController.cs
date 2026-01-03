@@ -655,9 +655,9 @@ public class GrievanceController : ControllerBase
     /// </summary>
     [HttpGet("escalated")]
     [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetEscalatedGrievances([FromQuery] int escalationThresholdDays = 7)
+    public async Task<IActionResult> GetEscalatedGrievances()
     {
-        var escalatedGrievances = await _grievanceService.GetEscalatedGrievancesAsync(escalationThresholdDays);
+        var escalatedGrievances = await _grievanceService.GetEscalatedGrievancesAsync(7);
 
         return Ok(escalatedGrievances);
     }

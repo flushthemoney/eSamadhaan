@@ -262,11 +262,7 @@ public class AssignmentService : IAssignmentService
             Id = assignment.Id,
             GrievanceId = assignment.GrievanceId,
             GrievanceNumber = assignment.Grievance?.GrievanceNumber ?? string.Empty,
-            OfficerId = assignment.OfficerId,
-            OfficerName = assignment.Officer?.Name ?? string.Empty,
-            OfficerEmail = assignment.Officer?.Email ?? string.Empty,
-            AssignedAt = assignment.AssignedAt,
-            IsActive = assignment.IsActive
+            AssignedAt = assignment.AssignedAt
         };
     }
 }

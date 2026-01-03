@@ -658,7 +658,8 @@ public class ReportService : IReportService
                           statusCounts.GetValueOrDefault(GrievanceStatus.Assigned, 0) +
                           statusCounts.GetValueOrDefault(GrievanceStatus.InReview, 0);
 
-        var resolvedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Resolved, 0);
+        var resolvedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Resolved, 0) +
+                           statusCounts.GetValueOrDefault(GrievanceStatus.Closed, 0);
         var closedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Closed, 0);
 
         // Recent grievances
@@ -733,7 +734,8 @@ public class ReportService : IReportService
                           statusCounts.GetValueOrDefault(GrievanceStatus.Assigned, 0) +
                           statusCounts.GetValueOrDefault(GrievanceStatus.InReview, 0);
 
-        var resolvedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Resolved, 0);
+        var resolvedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Resolved, 0) +
+                           statusCounts.GetValueOrDefault(GrievanceStatus.Closed, 0);
         var closedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Closed, 0);
 
         // Recent grievances in department

@@ -150,8 +150,6 @@ public class CategoryService : ICategoryService
     // Private helper methods
     private async Task<CategoryDto> MapToDtoAsync(GrievanceCategory category)
     {
-        var grievanceCount = await _grievanceRepository.CountByCategoryAsync(category.Id);
-        
         var department = await _departmentRepository.GetByIdAsync(category.DepartmentId);
         
         return new CategoryDto
@@ -160,8 +158,7 @@ public class CategoryService : ICategoryService
             Name = category.Name,
             Description = category.Description,
             DepartmentId = category.DepartmentId,
-            DepartmentName = department?.Name ?? string.Empty,
-            GrievanceCount = grievanceCount
+            DepartmentName = department?.Name ?? string.Empty
         };
     }
 }

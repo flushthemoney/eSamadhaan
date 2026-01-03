@@ -21,6 +21,11 @@ public class GrievanceRepository : IGrievanceRepository
             .Include(g => g.Citizen)
             .Include(g => g.Category)
             .Include(g => g.Department)
+            .Include(g => g.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.Officer!)
+            .Include(g => g.Resolution)
+                .ThenInclude(r => r!.ResolvedByOfficer)
+            .Include(g => g.Feedback)
             .FirstOrDefaultAsync(g => g.Id == id);
     }
 
@@ -30,6 +35,11 @@ public class GrievanceRepository : IGrievanceRepository
             .Include(g => g.Citizen)
             .Include(g => g.Category)
             .Include(g => g.Department)
+            .Include(g => g.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.Officer!)
+            .Include(g => g.Resolution)
+                .ThenInclude(r => r!.ResolvedByOfficer)
+            .Include(g => g.Feedback)
             .FirstOrDefaultAsync(g => g.GrievanceNumber == grievanceNumber);
     }
 
@@ -39,6 +49,11 @@ public class GrievanceRepository : IGrievanceRepository
             .Include(g => g.Citizen)
             .Include(g => g.Category)
             .Include(g => g.Department)
+            .Include(g => g.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.Officer!)
+            .Include(g => g.Resolution)
+                .ThenInclude(r => r!.ResolvedByOfficer)
+            .Include(g => g.Feedback)
             .ToListAsync();
     }
 
@@ -47,6 +62,11 @@ public class GrievanceRepository : IGrievanceRepository
         return await _context.Grievances
             .Include(g => g.Category)
             .Include(g => g.Department)
+            .Include(g => g.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.Officer!)
+            .Include(g => g.Resolution)
+                .ThenInclude(r => r!.ResolvedByOfficer)
+            .Include(g => g.Feedback)
             .Where(g => g.CitizenId == citizenId)
             .ToListAsync();
     }
@@ -56,6 +76,11 @@ public class GrievanceRepository : IGrievanceRepository
         return await _context.Grievances
             .Include(g => g.Citizen)
             .Include(g => g.Department)
+            .Include(g => g.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.Officer!)
+            .Include(g => g.Resolution)
+                .ThenInclude(r => r!.ResolvedByOfficer)
+            .Include(g => g.Feedback)
             .Where(g => g.CategoryId == categoryId)
             .ToListAsync();
     }
@@ -65,6 +90,11 @@ public class GrievanceRepository : IGrievanceRepository
         return await _context.Grievances
             .Include(g => g.Citizen)
             .Include(g => g.Category)
+            .Include(g => g.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.Officer!)
+            .Include(g => g.Resolution)
+                .ThenInclude(r => r!.ResolvedByOfficer)
+            .Include(g => g.Feedback)
             .Where(g => g.DepartmentId == departmentId)
             .ToListAsync();
     }
@@ -75,6 +105,11 @@ public class GrievanceRepository : IGrievanceRepository
             .Include(g => g.Citizen)
             .Include(g => g.Category)
             .Include(g => g.Department)
+            .Include(g => g.Assignments.Where(a => a.IsActive))
+                .ThenInclude(a => a.Officer!)
+            .Include(g => g.Resolution)
+                .ThenInclude(r => r!.ResolvedByOfficer)
+            .Include(g => g.Feedback)
             .Where(g => g.CurrentStatus == status)
             .ToListAsync();
     }

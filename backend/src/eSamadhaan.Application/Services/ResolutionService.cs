@@ -84,8 +84,8 @@ public class ResolutionService : IResolutionService
         grievance.UpdatedAt = DateTime.UtcNow;
         await _grievanceRepository.UpdateAsync(grievance);
 
-        // Record status history
-        await RecordStatusHistoryAsync(grievanceId, oldStatus, GrievanceStatus.Resolved, resolvedByOfficerId);
+        // Record status history with resolution remarks
+        await RecordStatusHistoryAsync(grievanceId, oldStatus, GrievanceStatus.Resolved, resolvedByOfficerId, resolutionRemarks);
 
         return createdResolution.Id;
     }
@@ -218,7 +218,7 @@ public class ResolutionService : IResolutionService
 
     // Private helper methods
 
-    private async Task RecordStatusHistoryAsync(int grievanceId, GrievanceStatus oldStatus, GrievanceStatus newStatus, int changedByUserId)
+    private async Task RecordStatusHistoryAsync(int grievanceId, GrievanceStatus oldStatus, GrievanceStatus newStatus, int changedByUserId, string? remarks = null)
     {
         var history = new GrievanceStatusHistory
         {
@@ -226,7 +226,8 @@ public class ResolutionService : IResolutionService
             OldStatus = oldStatus,
             NewStatus = newStatus,
             ChangedByUserId = changedByUserId,
-            ChangedAt = DateTime.UtcNow
+            ChangedAt = DateTime.UtcNow,
+            Remarks = remarks
         };
 
         await _statusHistoryRepository.CreateAsync(history);

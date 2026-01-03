@@ -7,8 +7,6 @@ public class GrievanceResponseDto
     public int Id { get; set; }
     public string GrievanceNumber { get; set; } = string.Empty;
     public int CitizenId { get; set; }
-    public string CitizenName { get; set; } = string.Empty;
-    public string CitizenEmail { get; set; } = string.Empty;
     public int CategoryId { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public int DepartmentId { get; set; }

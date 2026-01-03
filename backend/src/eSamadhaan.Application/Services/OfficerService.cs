@@ -222,7 +222,7 @@ public class OfficerService : IOfficerService
         await _grievanceRepository.UpdateAsync(grievance);
     }
 
-    public async Task<IEnumerable<UserDto>> GetDepartmentOfficersAsync(int officerId)
+    public async Task<IEnumerable<OfficerListDto>> GetDepartmentOfficersAsync(int officerId)
     {
         // Get officer and verify they belong to a department
         var officer = await _userRepository.GetByIdAsync(officerId);
@@ -247,15 +247,12 @@ public class OfficerService : IOfficerService
         // Filter to only include officers (DepartmentOfficer and SupervisoryOfficer roles)
         var officers = departmentOfficers
             .Where(u => u.Role == "DepartmentOfficer" || u.Role == "SupervisoryOfficer")
-            .Select(u => new UserDto
+            .Select(u => new OfficerListDto
             {
                 Id = u.Id,
                 Name = u.Name,
                 Email = u.Email,
-                Role = u.Role,
-                DepartmentId = u.DepartmentId,
-                IsActive = u.IsActive,
-                CreatedAt = u.CreatedAt
+                IsActive = u.IsActive
             })
             .OrderBy(u => u.Name)
             .ToList();

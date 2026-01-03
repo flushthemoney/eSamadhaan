@@ -381,13 +381,13 @@ public class GrievanceService : IGrievanceService
             Id = grievance.Id,
             GrievanceNumber = grievance.GrievanceNumber,
             CitizenId = grievance.CitizenId,
-            CitizenName = grievance.Citizen?.Name ?? string.Empty,
-            CitizenEmail = grievance.Citizen?.Email ?? string.Empty,
             CategoryId = grievance.CategoryId,
             CategoryName = grievance.Category?.Name ?? string.Empty,
             DepartmentId = grievance.DepartmentId,
             DepartmentName = grievance.Department?.Name ?? string.Empty,
             CurrentStatus = grievance.CurrentStatus,
+            Description = grievance.Description,
+            AttachmentUrl = grievance.AttachmentUrl,
             CreatedAt = grievance.CreatedAt,
             UpdatedAt = grievance.UpdatedAt
         };
