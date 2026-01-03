@@ -1,3 +1,4 @@
+using eSamadhaan.Application.DTOs.Auth;
 using eSamadhaan.Application.DTOs.Officer;
 using eSamadhaan.Application.Exceptions;
 using eSamadhaan.Application.Interfaces.Repositories;
@@ -26,7 +27,7 @@ public class OfficerService : IOfficerService
         _assignmentRepository = assignmentRepository;
     }
 
-    public async Task<IEnumerable<OfficerGrievanceListDto>> GetDepartmentGrievancesAsync(int officerId)
+    public async Task<IEnumerable<OfficerGrievanceListDto>> GetDepartmentGrievancesAsync(int officerId, int? categoryId = null, GrievanceStatus? status = null, string? sortBy = null)
     {
         // Get officer and verify they belong to a department
         var officer = await _userRepository.GetByIdAsync(officerId);
@@ -48,12 +49,25 @@ public class OfficerService : IOfficerService
         // Get all grievances for the officer's department
         var departmentGrievances = await _grievanceRepository.GetByDepartmentIdAsync(officer.DepartmentId.Value);
 
+        // Apply filters
+        var filteredGrievances = departmentGrievances.AsEnumerable();
+        
+        if (categoryId.HasValue)
+        {
+            filteredGrievances = filteredGrievances.Where(g => g.CategoryId == categoryId.Value);
+        }
+        
+        if (status.HasValue)
+        {
+            filteredGrievances = filteredGrievances.Where(g => g.CurrentStatus == status.Value);
+        }
+
         // Get active assignments for this officer
         var officerAssignments = await _assignmentRepository.GetActiveByOfficerIdAsync(officerId);
         var assignedGrievanceIds = officerAssignments.Select(a => a.GrievanceId).ToHashSet();
 
         // Map to DTOs using LINQ
-        var grievanceDtos = departmentGrievances
+        var grievanceDtos = filteredGrievances
             .Select(g => new OfficerGrievanceListDto
             {
                 Id = g.Id,
@@ -64,11 +78,18 @@ public class OfficerService : IOfficerService
                 CreatedAt = g.CreatedAt,
                 UpdatedAt = g.UpdatedAt,
                 IsAssignedToMe = assignedGrievanceIds.Contains(g.Id)
-            })
-            .OrderByDescending(g => g.CreatedAt)
-            .ToList();
+            });
+        
+        // Apply sorting
+        grievanceDtos = sortBy?.ToLower() switch
+        {
+            "status" => grievanceDtos.OrderBy(g => g.CurrentStatus),
+            "category" => grievanceDtos.OrderBy(g => g.CategoryName),
+            "oldest" => grievanceDtos.OrderBy(g => g.CreatedAt),
+            _ => grievanceDtos.OrderByDescending(g => g.CreatedAt) // Default: newest first
+        };
 
-        return grievanceDtos;
+        return grievanceDtos.ToList();
     }
 
     public async Task<OfficerGrievanceDetailDto> GetGrievanceDetailAsync(int grievanceId, int officerId)
@@ -199,6 +220,47 @@ public class OfficerService : IOfficerService
         grievance.CurrentStatus = request.NewStatus;
         grievance.UpdatedAt = DateTime.UtcNow;
         await _grievanceRepository.UpdateAsync(grievance);
+    }
+
+    public async Task<IEnumerable<UserDto>> GetDepartmentOfficersAsync(int officerId)
+    {
+        // Get officer and verify they belong to a department
+        var officer = await _userRepository.GetByIdAsync(officerId);
+        if (officer == null)
+        {
+            throw new NotFoundException("Officer", officerId);
+        }
+
+        if (!officer.DepartmentId.HasValue)
+        {
+            throw new BusinessRuleViolationException("Officer must be assigned to a department");
+        }
+
+        if (officer.Role != "DepartmentOfficer")
+        {
+            throw new UnauthorizedException("Only Department Officers can access this resource");
+        }
+
+        // Get all officers in the same department
+        var departmentOfficers = await _userRepository.GetByDepartmentIdAsync(officer.DepartmentId.Value);
+        
+        // Filter to only include officers (DepartmentOfficer and SupervisoryOfficer roles)
+        var officers = departmentOfficers
+            .Where(u => u.Role == "DepartmentOfficer" || u.Role == "SupervisoryOfficer")
+            .Select(u => new UserDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                Role = u.Role,
+                DepartmentId = u.DepartmentId,
+                IsActive = u.IsActive,
+                CreatedAt = u.CreatedAt
+            })
+            .OrderBy(u => u.Name)
+            .ToList();
+
+        return officers;
     }
 
     private void ValidateStatusTransition(GrievanceStatus currentStatus, GrievanceStatus newStatus)

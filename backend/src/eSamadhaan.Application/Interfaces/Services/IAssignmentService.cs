@@ -1,3 +1,5 @@
+using eSamadhaan.Domain.Enums;
+
 namespace eSamadhaan.Application.Interfaces.Services;
 
 public interface IAssignmentService
@@ -7,7 +9,7 @@ public interface IAssignmentService
     Task<object?> GetActiveAssignmentByGrievanceIdAsync(int grievanceId);
     Task<IEnumerable<object>> GetAssignmentsByGrievanceIdAsync(int grievanceId);
     Task<IEnumerable<object>> GetAssignmentsByOfficerIdAsync(int officerId);
-    Task<IEnumerable<object>> GetActiveAssignmentsByOfficerIdAsync(int officerId);
+    Task<IEnumerable<object>> GetActiveAssignmentsByOfficerIdAsync(int officerId, GrievanceStatus? status = null, int? categoryId = null);
     Task DeactivateAssignmentAsync(int assignmentId);
     
     // LINQ-based queries

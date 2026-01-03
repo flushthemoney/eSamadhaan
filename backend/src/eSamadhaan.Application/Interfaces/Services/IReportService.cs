@@ -35,4 +35,5 @@ public interface IReportService
     
     // Dashboard summary
     Task<object> GetDashboardSummaryAsync(int? departmentId, int? userId);
+    Task<object> GetOfficerDashboardSummaryAsync(int userId);
 }

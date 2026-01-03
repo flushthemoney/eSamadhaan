@@ -79,10 +79,9 @@ public class DepartmentController : ControllerBase
     /// Get all departments
     /// </summary>
     /// <remarks>
-    /// Only SystemAdmin can view all departments.
+    /// All authenticated users can view departments.
     /// </remarks>
     [HttpGet]
-    [Authorize(Roles = "SystemAdmin")]
     public async Task<IActionResult> GetAllDepartments()
     {
         var departments = await _departmentService.GetAllDepartmentsAsync();

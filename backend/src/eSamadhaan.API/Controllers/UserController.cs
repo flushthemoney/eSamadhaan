@@ -53,24 +53,7 @@ public class UserController : ControllerBase
         _logger.LogInformation("Retrieving users with filters - Role: {Role}, DepartmentId: {DepartmentId}, ActiveOnly: {ActiveOnly}",
             role, departmentId, activeOnly);
 
-        IEnumerable<UserDto> users;
-
-        if (!string.IsNullOrWhiteSpace(role))
-        {
-            users = await _userService.GetUsersByRoleAsync(role);
-        }
-        else if (departmentId.HasValue)
-        {
-            users = await _userService.GetUsersByDepartmentAsync(departmentId.Value);
-        }
-        else if (activeOnly == true)
-        {
-            users = await _userService.GetActiveUsersAsync();
-        }
-        else
-        {
-            users = await _userService.GetAllUsersAsync();
-        }
+        var users = await _userService.GetUsersWithFiltersAsync(role, departmentId, activeOnly);
 
         return Ok(users);
     }

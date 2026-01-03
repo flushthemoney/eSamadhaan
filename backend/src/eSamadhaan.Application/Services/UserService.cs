@@ -82,6 +82,46 @@ public class UserService : IUserService
         return users.Select(MapToDto);
     }
 
+    public async Task<IEnumerable<UserDto>> GetUsersWithFiltersAsync(string? role, int? departmentId, bool? activeOnly)
+    {
+        // Validate department exists before querying users
+        if (departmentId.HasValue)
+        {
+            if (!await _departmentRepository.ExistsAsync(departmentId.Value))
+            {
+                throw new NotFoundException("Department", departmentId.Value);
+            }
+        }
+        
+        var users = await _userRepository.GetAllAsync();
+        
+        // Apply filters using LINQ
+        var filteredUsers = users.AsEnumerable();
+        
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            // Validate role
+            var validRoles = new[] { "SystemAdmin", "DepartmentOfficer", "SupervisoryOfficer", "Citizen" };
+            if (!validRoles.Contains(role))
+            {
+                throw new ValidationException($"Invalid role. Valid roles are: {string.Join(", ", validRoles)}");
+            }
+            filteredUsers = filteredUsers.Where(u => u.Role == role);
+        }
+        
+        if (departmentId.HasValue)
+        {
+            filteredUsers = filteredUsers.Where(u => u.DepartmentId == departmentId.Value);
+        }
+        
+        if (activeOnly == true)
+        {
+            filteredUsers = filteredUsers.Where(u => u.IsActive);
+        }
+        
+        return filteredUsers.Select(MapToDto).ToList();
+    }
+
     public async Task<UserDto> CreateUserAsync(CreateUserRequestDto request)
     {
         // Validate inputs

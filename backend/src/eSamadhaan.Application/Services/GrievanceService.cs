@@ -115,9 +115,16 @@ public class GrievanceService : IGrievanceService
         return grievances.Select(MapToResponseDto);
     }
 
-    public async Task<IEnumerable<object>> GetGrievancesByCitizenAsync(int citizenId)
+    public async Task<IEnumerable<object>> GetGrievancesByCitizenAsync(int citizenId, GrievanceStatus? status = null)
     {
         var grievances = await _grievanceRepository.GetByCitizenIdAsync(citizenId);
+        
+        // Apply status filter if provided
+        if (status.HasValue)
+        {
+            grievances = grievances.Where(g => g.CurrentStatus == status.Value).ToList();
+        }
+        
         return grievances.Select(MapToResponseDto);
     }
 

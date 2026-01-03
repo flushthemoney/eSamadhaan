@@ -147,11 +147,11 @@ public class GrievanceController : ControllerBase
     /// </summary>
     [HttpGet("my-grievances")]
     [Authorize(Roles = "Citizen")]
-    public async Task<IActionResult> GetMyGrievances()
+    public async Task<IActionResult> GetMyGrievances([FromQuery] GrievanceStatus? status = null)
     {
         var citizenId = GetCurrentUserId();
 
-        var grievances = await _grievanceService.GetGrievancesByCitizenAsync(citizenId);
+        var grievances = await _grievanceService.GetGrievancesByCitizenAsync(citizenId, status);
 
         return Ok(grievances);
     }
@@ -161,11 +161,13 @@ public class GrievanceController : ControllerBase
     /// </summary>
     [HttpGet("my-queue")]
     [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer")]
-    public async Task<IActionResult> GetMyQueue()
+    public async Task<IActionResult> GetMyQueue(
+        [FromQuery] GrievanceStatus? status = null,
+        [FromQuery] int? categoryId = null)
     {
         var officerId = GetCurrentUserId();
 
-        var assignments = await _assignmentService.GetActiveAssignmentsByOfficerIdAsync(officerId);
+        var assignments = await _assignmentService.GetActiveAssignmentsByOfficerIdAsync(officerId, status, categoryId);
 
         return Ok(assignments);
     }
@@ -183,10 +185,10 @@ public class GrievanceController : ControllerBase
     }
 
     /// <summary>
-    /// Get all grievances (SystemAdmin only)
+    /// Get all grievances (SupervisoryOfficer and SystemAdmin)
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "SystemAdmin")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
     public async Task<IActionResult> GetAllGrievances()
     {
         var grievances = await _grievanceService.GetAllGrievancesAsync();
@@ -431,16 +433,30 @@ public class GrievanceController : ControllerBase
     // ========================================
 
     /// <summary>
-    /// Get dashboard summary with key metrics
+    /// Get dashboard summary with key metrics (Supervisor/Admin only)
     /// </summary>
     [HttpGet("dashboard")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
     public async Task<IActionResult> GetDashboard(
         [FromQuery] int? departmentId = null)
     {
         var userId = GetCurrentUserId();
 
         var dashboard = await _reportService.GetDashboardSummaryAsync(departmentId, userId);
+
+        return Ok(dashboard);
+    }
+
+    /// <summary>
+    /// Get department-scoped dashboard for department officers
+    /// </summary>
+    [HttpGet("dashboard/officer")]
+    [Authorize(Roles = "DepartmentOfficer")]
+    public async Task<IActionResult> GetOfficerDashboard()
+    {
+        var userId = GetCurrentUserId();
+
+        var dashboard = await _reportService.GetOfficerDashboardSummaryAsync(userId);
 
         return Ok(dashboard);
     }

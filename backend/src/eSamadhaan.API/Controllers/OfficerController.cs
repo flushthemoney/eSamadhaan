@@ -1,5 +1,6 @@
 using eSamadhaan.Application.DTOs.Officer;
 using eSamadhaan.Application.Interfaces.Services;
+using eSamadhaan.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -22,10 +23,13 @@ public class OfficerController : ControllerBase
     /// Get all grievances for the officer's department
     /// </summary>
     [HttpGet("grievances")]
-    public async Task<IActionResult> GetDepartmentGrievances()
+    public async Task<IActionResult> GetDepartmentGrievances(
+        [FromQuery] int? categoryId = null,
+        [FromQuery] GrievanceStatus? status = null,
+        [FromQuery] string? sortBy = null)
     {
         var officerId = GetCurrentUserId();
-        var grievances = await _officerService.GetDepartmentGrievancesAsync(officerId);
+        var grievances = await _officerService.GetDepartmentGrievancesAsync(officerId, categoryId, status, sortBy);
         return Ok(grievances);
     }
 
@@ -51,6 +55,17 @@ public class OfficerController : ControllerBase
         var officerId = GetCurrentUserId();
         await _officerService.ChangeGrievanceStatusAsync(id, officerId, request);
         return Ok(new { message = "Grievance status updated successfully" });
+    }
+
+    /// <summary>
+    /// Get all officers in the current officer's department
+    /// </summary>
+    [HttpGet("/api/department/officers")]
+    public async Task<IActionResult> GetDepartmentOfficers()
+    {
+        var officerId = GetCurrentUserId();
+        var officers = await _officerService.GetDepartmentOfficersAsync(officerId);
+        return Ok(officers);
     }
 
     // Helper method to extract user ID from claims

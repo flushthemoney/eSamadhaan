@@ -11,7 +11,7 @@ public interface IGrievanceService
     Task<IEnumerable<object>> GetAllGrievancesAsync();
     
     // Filter and Search
-    Task<IEnumerable<object>> GetGrievancesByCitizenAsync(int citizenId);
+    Task<IEnumerable<object>> GetGrievancesByCitizenAsync(int citizenId, GrievanceStatus? status = null);
     Task<IEnumerable<object>> GetGrievancesByDepartmentAsync(int departmentId);
     Task<IEnumerable<object>> GetGrievancesByCategoryAsync(int categoryId);
     Task<IEnumerable<object>> GetGrievancesByStatusAsync(GrievanceStatus status);

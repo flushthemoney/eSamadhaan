@@ -175,10 +175,27 @@ public class AssignmentService : IAssignmentService
         return assignments.Select(MapToResponseDto);
     }
 
-    public async Task<IEnumerable<object>> GetActiveAssignmentsByOfficerIdAsync(int officerId)
+    public async Task<IEnumerable<object>> GetActiveAssignmentsByOfficerIdAsync(int officerId, GrievanceStatus? status = null, int? categoryId = null)
     {
         var assignments = await _assignmentRepository.GetActiveByOfficerIdAsync(officerId);
-        return assignments.Select(MapToResponseDto);
+        
+        // Apply filters if provided
+        var filteredAssignments = assignments.AsEnumerable();
+        
+        if (status.HasValue)
+        {
+            filteredAssignments = filteredAssignments.Where(a => a.Grievance.CurrentStatus == status.Value);
+        }
+        
+        if (categoryId.HasValue)
+        {
+            filteredAssignments = filteredAssignments.Where(a => a.Grievance.CategoryId == categoryId.Value);
+        }
+        
+        // Sort by most recent grievances first
+        filteredAssignments = filteredAssignments.OrderByDescending(a => a.Grievance.CreatedAt);
+        
+        return filteredAssignments.Select(MapToResponseDto);
     }
 
     public async Task DeactivateAssignmentAsync(int assignmentId)
