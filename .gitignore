@@ -23,4 +23,12 @@ obj/
 # Additional stuff
 backend/docs
 appsettings.Development.json
-Authentication.http
+frontend/docs
+frontend/esamadhaan-ui/dist/
+frontend/esamadhaan-ui/.angular/cache/
+frontend/esamadhaan-ui/.angular/local/
+frontend/esamadhaan-ui/.env
+frontend/esamadhaan-ui/.env.*
+
+# Node
+node_modules/

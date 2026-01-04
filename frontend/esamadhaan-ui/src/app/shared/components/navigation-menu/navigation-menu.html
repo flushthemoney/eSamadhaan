@@ -1,0 +1,21 @@
+<mat-nav-list>
+  @for (item of menuItems; track item.label) {
+    @if (item.type === 'divider') {
+      <mat-divider></mat-divider>
+    } @else {
+      <a
+        mat-list-item
+        [routerLink]="item.route || ''"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/citizen/dashboard' || item.route === '/officer/dashboard' || item.route === '/supervisor/dashboard' || item.route === '/admin/dashboard' }"
+        (click)="item.action === 'logout' && handleLogout($event)"
+      >
+        <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+        <span matListItemTitle>{{ item.label }}</span>
+        @if (item.badge) {
+          <mat-icon matListItemMeta>badge</mat-icon>
+        }
+      </a>
+    }
+  }
+</mat-nav-list>
