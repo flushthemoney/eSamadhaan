@@ -66,5 +66,76 @@ export class GrievanceService {
       reason,
     });
   }
+
+  // OFFICER APIs
+  getOfficerDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dashboard/officer`);
+  }
+
+  getMyQueue(filters?: {
+    status?: number;
+    categoryId?: number;
+  }): Observable<any[]> {
+    let params = new HttpParams();
+    if (filters?.status) {
+      params = params.set('status', filters.status.toString());
+    }
+    if (filters?.categoryId) {
+      params = params.set('categoryId', filters.categoryId.toString());
+    }
+    return this.http.get<any[]>(`${this.apiUrl}/my-queue`, { params });
+  }
+
+  getOfficerGrievanceDetail(id: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/officer/grievances/${id}`);
+  }
+
+  getDepartmentGrievances(filters?: {
+    categoryId?: number;
+    status?: number;
+    sortBy?: string;
+  }): Observable<any[]> {
+    let params = new HttpParams();
+    if (filters?.categoryId) {
+      params = params.set('categoryId', filters.categoryId.toString());
+    }
+    if (filters?.status) {
+      params = params.set('status', filters.status.toString());
+    }
+    if (filters?.sortBy) {
+      params = params.set('sortBy', filters.sortBy);
+    }
+    return this.http.get<any[]>(`${environment.apiUrl}/officer/grievances`, { params });
+  }
+
+  updateGrievanceStatus(grievanceId: number, status: number): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${grievanceId}/status`, {
+      status,
+    });
+  }
+
+  assignGrievance(
+    grievanceId: number,
+    request: any
+  ): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/${grievanceId}/assign`,
+      request
+    );
+  }
+
+  submitResolution(
+    grievanceId: number,
+    request: any
+  ): Observable<void> {
+    return this.http.post<void>(
+      `${this.apiUrl}/${grievanceId}/resolution`,
+      request
+    );
+  }
+
+  closeGrievance(grievanceId: number): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/${grievanceId}/close`, {});
+  }
 }
 

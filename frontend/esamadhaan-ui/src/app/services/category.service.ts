@@ -17,5 +17,17 @@ export class CategoryService {
       `${this.apiUrl}/department/${departmentId}/categories`
     );
   }
+
+  createCategory(request: any): Observable<CategoryDto> {
+    return this.http.post<CategoryDto>(`${this.apiUrl}/categories`, request);
+  }
+
+  updateCategory(id: number, request: any): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/categories/${id}`, request);
+  }
+
+  deleteCategory(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/categories/${id}`);
+  }
 }
 

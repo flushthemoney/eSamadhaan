@@ -22,7 +22,7 @@ export const routes: Routes = [
   
   // Feature module routes
   { path: 'citizen', loadChildren: () => import('./features/citizen/citizen.routes').then(m => m.citizenRoutes) },
-  // { path: 'officer', loadChildren: () => import('./features/officer/officer.routes').then(m => m.routes) },
+  { path: 'officer', loadChildren: () => import('./features/officer/officer.routes').then(m => m.officerRoutes) },
   // { path: 'supervisor', loadChildren: () => import('./features/supervisor/supervisor.routes').then(m => m.routes) },
   // { path: 'admin', loadChildren: () => import('./features/admin/admin.routes').then(m => m.routes) },
   

@@ -1,0 +1,157 @@
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else if (grievance) {
+  <app-page-header [title]="'Grievance #' + grievance.grievanceNumber">
+    <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
+  </app-page-header>
+
+  <div class="grievance-detail">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Grievance Details</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="detail-row">
+          <strong>Department:</strong> {{ grievance.departmentName }}
+        </div>
+        <div class="detail-row">
+          <strong>Category:</strong> {{ grievance.categoryName }}
+        </div>
+        <div class="detail-row">
+          <strong>Description:</strong>
+          <p>{{ grievance.description }}</p>
+        </div>
+        <div class="detail-row">
+          <strong>Created:</strong> {{ grievance.createdAt | relativeTime }}
+        </div>
+        @if (grievance.currentAssignment) {
+          <div class="detail-row">
+            <strong>Assigned Officer:</strong> {{ grievance.currentAssignment.officerName }}
+            <small>(Assigned {{ grievance.currentAssignment.assignedAt | relativeTime }})</small>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Actions</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="action-buttons">
+          @if (isUnassigned) {
+            <button mat-raised-button color="primary" (click)="showAssignDialog()">
+              Assign Grievance
+            </button>
+          }
+
+          <button mat-raised-button color="accent" (click)="updateStatus(GrievanceStatus.Assigned)" 
+            [disabled]="grievance.currentStatus === GrievanceStatus.Assigned">
+            Mark as Assigned
+          </button>
+
+          <button mat-raised-button color="accent" (click)="updateStatus(GrievanceStatus.InReview)"
+            [disabled]="grievance.currentStatus === GrievanceStatus.InReview">
+            Mark as In Review
+          </button>
+
+          @if (grievance.currentStatus !== GrievanceStatus.Resolved && grievance.currentStatus !== GrievanceStatus.Closed) {
+            <button mat-raised-button color="primary" (click)="showResolutionDialog()">
+              Submit Resolution
+            </button>
+          }
+
+          @if (grievance.currentStatus === GrievanceStatus.Resolved) {
+            <button mat-raised-button color="warn" (click)="closeGrievance()">
+              Close Grievance
+            </button>
+          }
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    @if (showAssignForm) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Assign Grievance</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="assignForm" (ngSubmit)="assignGrievance()">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Assign To Officer</mat-label>
+              <mat-select formControlName="officerId">
+                <mat-option [value]="">Select officer</mat-option>
+                @for (officer of officers; track officer.id) {
+                  <mat-option [value]="officer.id">{{ officer.name }} ({{ officer.email }})</mat-option>
+                }
+              </mat-select>
+              <mat-error *ngIf="assignForm.get('officerId')?.hasError('required')">Please select an officer</mat-error>
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="assignForm.invalid || isAssigning">
+                Assign
+              </button>
+              <button mat-button type="button" (click)="showAssignForm = false">Cancel</button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (showResolutionForm) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Submit Resolution</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <form [formGroup]="resolutionForm" (ngSubmit)="submitResolution()">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Resolution Details</mat-label>
+              <textarea matInput formControlName="remarks" rows="6" 
+                placeholder="Describe the resolution (minimum 50 characters)" required></textarea>
+              <mat-hint align="end">{{ resolutionForm.get('remarks')?.value?.length || 0 }} / 1000</mat-hint>
+              <mat-error *ngIf="resolutionForm.get('remarks')?.hasError('required')">Resolution details are required</mat-error>
+              <mat-error *ngIf="resolutionForm.get('remarks')?.hasError('minlength')">Details must be at least 50 characters</mat-error>
+              <mat-error *ngIf="resolutionForm.get('remarks')?.hasError('maxlength')">Details cannot exceed 1000 characters</mat-error>
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button mat-raised-button color="primary" type="submit" [disabled]="resolutionForm.invalid || isResolving">
+                Submit Resolution
+              </button>
+              <button mat-button type="button" (click)="showResolutionForm = false">Cancel</button>
+            </div>
+          </form>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Status History</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (grievance.statusHistory && grievance.statusHistory.length > 0) {
+          <div class="timeline">
+            @for (item of grievance.statusHistory; track item.id) {
+              <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <strong>{{ item.newStatus }}</strong>
+                  <p>{{ item.changedByUserName }}</p>
+                  <small>{{ item.changedAt | relativeTime }}</small>
+                  @if (item.remarks) {
+                    <p>{{ item.remarks }}</p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p>No status history available</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+}
