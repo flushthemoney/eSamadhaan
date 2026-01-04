@@ -1,0 +1,116 @@
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else if (grievance) {
+  <app-page-header [title]="'Grievance #' + grievance.grievanceNumber">
+    <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
+  </app-page-header>
+
+  <div class="grievance-detail">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Grievance Details</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="detail-row">
+          <strong>Department:</strong> {{ grievance.departmentName }}
+        </div>
+        <div class="detail-row">
+          <strong>Category:</strong> {{ grievance.categoryName }}
+        </div>
+        <div class="detail-row">
+          <strong>Description:</strong>
+          <p>{{ grievance.description }}</p>
+        </div>
+        <div class="detail-row">
+          <strong>Created:</strong> {{ grievance.createdAt | relativeTime }}
+        </div>
+        @if (grievance.currentAssignment) {
+          <div class="detail-row">
+            <strong>Assigned Officer:</strong> {{ grievance.currentAssignment.officerName }}
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    @if (resolution) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Resolution</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>{{ resolution.resolutionRemarks }}</p>
+          <small>Resolved by {{ resolution.resolvedByOfficerName }} on {{ resolution.resolvedAt | relativeTime }}</small>
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <mat-card>
+        <mat-card-content>
+          <p>Resolution pending</p>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (canEscalate && !showEscalationForm) {
+      <mat-card>
+        <mat-card-content>
+          <button mat-raised-button color="warn" (click)="showEscalateForm()">
+            Escalate Grievance
+          </button>
+        </mat-card-content>
+      </mat-card>
+    } @else if (!canEscalate && grievance.currentStatus === 1) {
+      <mat-card>
+        <mat-card-content>
+          <p>Escalation is only allowed after 7 days of submitting a grievance</p>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    @if (showEscalationForm) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Escalate Grievance</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Reason for Escalation</mat-label>
+            <textarea matInput [(ngModel)]="escalationReason" rows="4" required></textarea>
+          </mat-form-field>
+          <div class="actions">
+            <button mat-raised-button color="warn" (click)="escalateGrievance()" [disabled]="isEscalating">
+              Submit Escalation
+            </button>
+            <button mat-button (click)="showEscalationForm = false">Cancel</button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Status History</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (history.length > 0) {
+          <div class="timeline">
+            @for (item of history; track item.id) {
+              <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <strong>{{ item.newStatus }}</strong>
+                  <p>{{ item.changedByUserName }}</p>
+                  <small>{{ item.changedAt | relativeTime }}</small>
+                  @if (item.remarks) {
+                    <p>{{ item.remarks }}</p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p>No status history available</p>
+        }
+      </mat-card-content>
+    </mat-card>
+  </div>
+}

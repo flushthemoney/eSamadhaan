@@ -1,0 +1,99 @@
+<app-page-header title="Lodge New Grievance" subtitle="Submit your grievance for resolution">
+</app-page-header>
+
+<mat-card>
+  <mat-card-content>
+    <form [formGroup]="lodgeGrievanceForm" (ngSubmit)="onSubmit()">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Department</mat-label>
+        <mat-select formControlName="departmentId">
+          <mat-option [value]="">Select department</mat-option>
+          @for (dept of departments; track dept.id) {
+            <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>business</mat-icon>
+        @if (isLoadingDepartments) {
+          <mat-spinner matSuffix diameter="20"></mat-spinner>
+        }
+        <mat-error *ngIf="shouldShowError('departmentId')">
+          {{ getErrorMessage('departmentId') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Category</mat-label>
+        <mat-select formControlName="categoryId" [disabled]="!lodgeGrievanceForm.get('departmentId')?.value || isLoadingCategories">
+          <mat-option [value]="">Select category</mat-option>
+          @for (cat of categories; track cat.id) {
+            <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
+          }
+        </mat-select>
+        <mat-icon matPrefix>category</mat-icon>
+        @if (isLoadingCategories) {
+          <mat-spinner matSuffix diameter="20"></mat-spinner>
+        }
+        @if (noCategoriesMessage && !isLoadingCategories) {
+          <mat-hint>{{ noCategoriesMessage }}</mat-hint>
+        }
+        <mat-error *ngIf="shouldShowError('categoryId')">
+          {{ getErrorMessage('categoryId') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Grievance Details</mat-label>
+        <textarea
+          matInput
+          formControlName="description"
+          rows="8"
+          placeholder="Describe your grievance in detail (minimum 50 characters)"
+          maxlength="2000"
+        ></textarea>
+        <mat-hint align="end">{{ descriptionLength }} / 2000 characters</mat-hint>
+        <mat-error *ngIf="shouldShowError('description')">
+          {{ getErrorMessage('description') }}
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Attachment (Optional)</mat-label>
+        <input
+          #fileInput
+          type="file"
+          matInput
+          (change)="onFileSelected($event)"
+          accept=".jpg,.jpeg,.png,.pdf"
+        />
+        @if (selectedFile) {
+          <mat-chip-set>
+            <mat-chip (removed)="removeFile()">
+              {{ selectedFile.name }}
+              <button matChipRemove>
+                <mat-icon>cancel</mat-icon>
+              </button>
+            </mat-chip>
+          </mat-chip-set>
+        }
+        <mat-hint>Only JPG, PNG, and PDF files up to 5MB</mat-hint>
+        <mat-error *ngIf="shouldShowError('attachment')">
+          {{ getErrorMessage('attachment') }}
+        </mat-error>
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          [disabled]="lodgeGrievanceForm.invalid || isSubmitting || categories.length === 0"
+        >
+          <mat-spinner *ngIf="isSubmitting" diameter="20" class="spinner-inline"></mat-spinner>
+          <span *ngIf="!isSubmitting">Submit Grievance</span>
+          <span *ngIf="isSubmitting">Submitting...</span>
+        </button>
+        <button mat-button type="button" routerLink="/citizen/dashboard">Cancel</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>

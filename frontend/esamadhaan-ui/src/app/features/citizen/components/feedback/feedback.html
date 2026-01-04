@@ -1,0 +1,67 @@
+<app-page-header title="Feedback" subtitle="Provide feedback on resolved or closed grievances">
+</app-page-header>
+
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else if (eligibleGrievances.length === 0) {
+  <app-empty-state
+    icon="feedback"
+    message="No grievances available for feedback"
+    subMessage="No resolved or closed grievances available for feedback."
+  ></app-empty-state>
+} @else {
+  @for (grievance of eligibleGrievances; track grievance.id) {
+    <mat-card class="feedback-card">
+      <mat-card-header>
+        <mat-card-title>{{ grievance.grievanceNumber }}</mat-card-title>
+        <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
+      </mat-card-header>
+      <mat-card-content>
+        <p><strong>Category:</strong> {{ grievance.categoryName }}</p>
+        <p><strong>Department:</strong> {{ grievance.departmentName }}</p>
+        <p><strong>Created:</strong> {{ grievance.createdAt | relativeTime }}</p>
+
+        @if (hasFeedback(grievance.id)) {
+          <div class="feedback-submitted">
+            <mat-icon>check_circle</mat-icon>
+            <span>Feedback Submitted</span>
+          </div>
+        } @else {
+          <form [formGroup]="feedbackForms.get(grievance.id)!" (ngSubmit)="submitFeedback(grievance.id)">
+            <div class="rating-section">
+              <label>Rating:</label>
+              <div class="stars">
+                @for (star of [1,2,3,4,5]; track star) {
+                  <mat-icon
+                    [class.filled]="star <= feedbackForms.get(grievance.id)?.get('rating')?.value"
+                    (click)="setRating(grievance.id, star)"
+                  >
+                    {{ star <= feedbackForms.get(grievance.id)?.get('rating')?.value ? 'star' : 'star_border' }}
+                  </mat-icon>
+                }
+              </div>
+            </div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Comments (Optional)</mat-label>
+              <textarea matInput formControlName="comments" rows="3" maxlength="500"></textarea>
+              <mat-hint align="end">{{ feedbackForms.get(grievance.id)?.get('comments')?.value?.length || 0 }} / 500</mat-hint>
+            </mat-form-field>
+
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="feedbackForms.get(grievance.id)?.invalid || submittingFeedback.has(grievance.id)"
+            >
+              @if (submittingFeedback.has(grievance.id)) {
+                <mat-spinner diameter="20" class="spinner-inline"></mat-spinner>
+              }
+              Submit Feedback
+            </button>
+          </form>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+}

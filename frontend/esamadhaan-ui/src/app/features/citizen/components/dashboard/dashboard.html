@@ -1,0 +1,47 @@
+<app-page-header title="Dashboard" subtitle="Overview of your grievances">
+  <button mat-raised-button color="primary" routerLink="/citizen/grievances/new">
+    <mat-icon>add</mat-icon>
+    Lodge New Grievance
+  </button>
+</app-page-header>
+
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else if (grievances.length === 0) {
+  <app-empty-state
+    icon="inbox"
+    message="No grievances yet"
+    subMessage="You haven't submitted any grievances yet. Click the button below to lodge your first grievance."
+  >
+    <button mat-raised-button color="primary" routerLink="/citizen/grievances/new">
+      Add New Grievance
+    </button>
+  </app-empty-state>
+} @else {
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Recent Grievances</mat-card-title>
+      <mat-card-subtitle>Your latest {{ grievances.length }} grievance{{ grievances.length > 1 ? 's' : '' }}</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-list>
+        @for (grievance of grievances.slice(0, 10); track grievance.id) {
+          <a mat-list-item [routerLink]="['/citizen/grievances', grievance.id]">
+            <mat-icon matListItemIcon>description</mat-icon>
+            <div matListItemTitle>
+              <span>{{ grievance.grievanceNumber }}</span>
+              <app-grievance-status-badge [status]="grievance.currentStatus" style="margin-left: 8px;"></app-grievance-status-badge>
+            </div>
+            <div matListItemLine>
+              {{ grievance.categoryName }} • {{ grievance.createdAt | relativeTime }}
+            </div>
+          </a>
+          <mat-divider></mat-divider>
+        }
+      </mat-list>
+    </mat-card-content>
+    <mat-card-actions *ngIf="grievances.length > 10">
+      <button mat-button routerLink="/citizen/grievances">View All Grievances</button>
+    </mat-card-actions>
+  </mat-card>
+}

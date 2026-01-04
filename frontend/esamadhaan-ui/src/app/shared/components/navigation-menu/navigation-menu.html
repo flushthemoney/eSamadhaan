@@ -1,5 +1,5 @@
 <mat-nav-list>
-  @for (item of menuItems; track item.label) {
+  @for (item of menuItems; track item.label || item.type) {
     @if (item.type === 'divider') {
       <mat-divider></mat-divider>
     } @else {
@@ -13,7 +13,7 @@
         <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
         <span matListItemTitle>{{ item.label }}</span>
         @if (item.badge) {
-          <mat-icon matListItemMeta>badge</mat-icon>
+          <span matListItemMeta>{{ item.badge }}</span>
         }
       </a>
     }

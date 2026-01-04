@@ -1,0 +1,44 @@
+.feedback-card {
+  margin-bottom: 1.5rem;
+}
+
+.feedback-submitted {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4caf50;
+  margin-top: 1rem;
+}
+
+.rating-section {
+  margin: 1rem 0;
+
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .stars {
+    display: flex;
+    gap: 0.25rem;
+
+    mat-icon {
+      cursor: pointer;
+      color: #ffc107;
+
+      &.filled {
+        color: #ffc107;
+      }
+    }
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+.spinner-inline {
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+

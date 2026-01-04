@@ -20,8 +20,8 @@ export const routes: Routes = [
   // Error pages
   { path: 'unauthorized', component: UnauthorizedComponent },
   
-  // Feature module routes will be added in later phases
-  // { path: 'citizen', loadChildren: () => import('./features/citizen/citizen.routes').then(m => m.routes) },
+  // Feature module routes
+  { path: 'citizen', loadChildren: () => import('./features/citizen/citizen.routes').then(m => m.citizenRoutes) },
   // { path: 'officer', loadChildren: () => import('./features/officer/officer.routes').then(m => m.routes) },
   // { path: 'supervisor', loadChildren: () => import('./features/supervisor/supervisor.routes').then(m => m.routes) },
   // { path: 'admin', loadChildren: () => import('./features/admin/admin.routes').then(m => m.routes) },
