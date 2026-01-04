@@ -1,0 +1,130 @@
+<app-page-header title="Grievance Monitor" subtitle="Monitor all grievances across the system">
+</app-page-header>
+
+<mat-card style="margin-bottom: 1.5rem;">
+  <mat-card-header>
+    <mat-card-title>Search Grievances</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <form [formGroup]="searchForm" class="search-form">
+      <div class="search-row">
+        <mat-form-field appearance="outline" style="flex: 1;">
+          <mat-label>Grievance Number</mat-label>
+          <input matInput formControlName="grievanceNumber" placeholder="Enter grievance number" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="flex: 1;">
+          <mat-label>Department</mat-label>
+          <mat-select formControlName="departmentId">
+            <mat-option [value]="">All Departments</mat-option>
+            @for (dept of departments; track dept.id) {
+              <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="flex: 1;">
+          <mat-label>Category</mat-label>
+          <mat-select formControlName="categoryId" [disabled]="!searchForm.get('departmentId')?.value">
+            <mat-option [value]="">All Categories</mat-option>
+            @for (cat of categories; track cat.id) {
+              <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="search-row">
+        <mat-form-field appearance="outline" style="flex: 1;">
+          <mat-label>Status</mat-label>
+          <mat-select formControlName="status">
+            <mat-option [value]="">All Status</mat-option>
+            <mat-option [value]="GrievanceStatus.Submitted">Submitted</mat-option>
+            <mat-option [value]="GrievanceStatus.Assigned">Assigned</mat-option>
+            <mat-option [value]="GrievanceStatus.InReview">In Review</mat-option>
+            <mat-option [value]="GrievanceStatus.Resolved">Resolved</mat-option>
+            <mat-option [value]="GrievanceStatus.Closed">Closed</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="flex: 1;">
+          <mat-label>From Date</mat-label>
+          <input matInput [matDatepicker]="fromPicker" formControlName="fromDate" />
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" style="flex: 1;">
+          <mat-label>To Date</mat-label>
+          <input matInput [matDatepicker]="toPicker" formControlName="toDate" />
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="search-actions">
+        <button mat-raised-button color="primary" (click)="onSearch()" [disabled]="isSearching">
+          <mat-icon>search</mat-icon>
+          Search
+        </button>
+        <button mat-button (click)="searchForm.reset(); loadAllGrievances()">Clear</button>
+      </div>
+    </form>
+  </mat-card-content>
+</mat-card>
+
+@if (isLoading || isSearching) {
+  <app-loading-spinner [isLoading]="isLoading || isSearching"></app-loading-spinner>
+} @else if (grievances.length === 0) {
+  <app-empty-state
+    icon="search"
+    message="No grievances match your search criteria"
+    subMessage="Try adjusting your search filters or clear them to view all grievances."
+  ></app-empty-state>
+} @else {
+  <mat-card>
+    <mat-card-content>
+      <table mat-table [dataSource]="filteredGrievances" class="grievance-table">
+        <ng-container matColumnDef="grievanceNumber">
+          <th mat-header-cell *matHeaderCellDef>Grievance Number</th>
+          <td mat-cell *matCellDef="let grievance">{{ grievance.grievanceNumber }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="departmentName">
+          <th mat-header-cell *matHeaderCellDef>Department</th>
+          <td mat-cell *matCellDef="let grievance">{{ grievance.departmentName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="categoryName">
+          <th mat-header-cell *matHeaderCellDef>Category</th>
+          <td mat-cell *matCellDef="let grievance">{{ grievance.categoryName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let grievance">
+            <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Created</th>
+          <td mat-cell *matCellDef="let grievance">{{ grievance.createdAt | relativeTime }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      @if (grievances.length > pageSize) {
+        <mat-paginator
+          [length]="grievances.length"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          [pageSizeOptions]="[10, 25, 50]"
+          (page)="onPageChange($event)"
+        ></mat-paginator>
+      }
+    </mat-card-content>
+  </mat-card>
+}

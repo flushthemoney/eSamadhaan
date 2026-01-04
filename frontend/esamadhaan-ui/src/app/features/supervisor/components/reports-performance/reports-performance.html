@@ -1,0 +1,75 @@
+<app-page-header title="Performance Report" subtitle="Resolution time analytics">
+</app-page-header>
+
+<mat-card style="margin-bottom: 1.5rem;">
+  <mat-card-content>
+    <div class="filters">
+      <mat-form-field appearance="outline">
+        <mat-label>Filter By</mat-label>
+        <mat-select [(ngModel)]="filterType" (selectionChange)="onFilterTypeChange()">
+          <mat-option value="all">All</mat-option>
+          <mat-option value="department">Department</mat-option>
+          <mat-option value="category">Category</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      @if (filterType === 'department') {
+        <mat-form-field appearance="outline">
+          <mat-label>Department</mat-label>
+          <mat-select [(ngModel)]="selectedDepartmentId" (selectionChange)="onDepartmentChange()">
+            <mat-option [value]="null">Select Department</mat-option>
+            @for (dept of departments; track dept.id) {
+              <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+
+      @if (filterType === 'category' && selectedDepartmentId) {
+        <mat-form-field appearance="outline">
+          <mat-label>Category</mat-label>
+          <mat-select [(ngModel)]="selectedCategoryId" (selectionChange)="loadPerformanceReport()">
+            <mat-option [value]="null">Select Category</mat-option>
+            @for (cat of categories; track cat.id) {
+              <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>
+
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else if (performanceData) {
+  <mat-card>
+    <mat-card-header>
+      <mat-card-title>Resolution Time Statistics</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-label">Average</div>
+          <div class="stat-value">{{ performanceData.averageResolutionTimeInDays?.toFixed(1) || 0 }} days</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Median</div>
+          <div class="stat-value">{{ performanceData.medianResolutionTimeInDays?.toFixed(1) || 0 }} days</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Minimum</div>
+          <div class="stat-value">{{ performanceData.minResolutionTimeInDays || 0 }} days</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Maximum</div>
+          <div class="stat-value">{{ performanceData.maxResolutionTimeInDays || 0 }} days</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Resolved</div>
+          <div class="stat-value">{{ performanceData.totalResolvedGrievances || 0 }}</div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}

@@ -137,5 +137,28 @@ export class GrievanceService {
   closeGrievance(grievanceId: number): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${grievanceId}/close`, {});
   }
+
+  // SUPERVISOR APIs
+  getSupervisorDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/dashboard`);
+  }
+
+  getAllGrievances(): Observable<any[]> {
+    return this.http.get<any[]>(this.apiUrl);
+  }
+
+  searchGrievances(criteria: any): Observable<any[]> {
+    let params = new HttpParams();
+    Object.keys(criteria).forEach((key) => {
+      if (criteria[key] !== null && criteria[key] !== undefined && criteria[key] !== '') {
+        params = params.set(key, criteria[key].toString());
+      }
+    });
+    return this.http.get<any[]>(`${this.apiUrl}/search`, { params });
+  }
+
+  getEscalatedGrievances(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/escalated`);
+  }
 }
 

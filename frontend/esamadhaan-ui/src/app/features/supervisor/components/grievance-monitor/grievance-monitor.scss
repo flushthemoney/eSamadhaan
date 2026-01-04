@@ -1,0 +1,19 @@
+.search-form {
+  .search-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .search-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+}
+
+.grievance-table {
+  width: 100%;
+}
+
