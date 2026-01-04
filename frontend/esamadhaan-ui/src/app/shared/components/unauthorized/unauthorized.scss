@@ -1,0 +1,52 @@
+.unauthorized-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+.unauthorized-card {
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+
+  mat-card-header {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1rem;
+
+    .large-icon {
+      font-size: 80px;
+      width: 80px;
+      height: 80px;
+      color: #f44336;
+    }
+  }
+
+  mat-card-content {
+    h1 {
+      font-size: 28px;
+      font-weight: 500;
+      margin: 0 0 1rem 0;
+      color: rgba(0, 0, 0, 0.87);
+    }
+
+    p {
+      margin: 0.5rem 0;
+      color: rgba(0, 0, 0, 0.6);
+    }
+
+    strong {
+      color: rgba(0, 0, 0, 0.87);
+    }
+  }
+
+  mat-card-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+}
+

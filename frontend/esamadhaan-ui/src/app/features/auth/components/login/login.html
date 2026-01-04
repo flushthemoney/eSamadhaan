@@ -1,0 +1,72 @@
+<div class="login-container">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <mat-card-title>eSamadhaan</mat-card-title>
+      <mat-card-subtitle>Login to your account</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email Address</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            placeholder="Enter your email"
+            autocomplete="email"
+          />
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-error *ngIf="shouldShowError('email')">
+            {{ getErrorMessage('email') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input
+            matInput
+            [type]="hidePassword ? 'password' : 'text'"
+            formControlName="password"
+            placeholder="Enter password"
+            autocomplete="current-password"
+          />
+          <mat-icon matPrefix>lock</mat-icon>
+          <button
+            mat-icon-button
+            matSuffix
+            (click)="hidePassword = !hidePassword"
+            type="button"
+            [attr.aria-label]="'Hide password'"
+            [attr.aria-pressed]="hidePassword"
+          >
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="shouldShowError('password')">
+            {{ getErrorMessage('password') }}
+          </mat-error>
+        </mat-form-field>
+
+        <mat-checkbox formControlName="rememberMe">Remember me</mat-checkbox>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="submit"
+          class="full-width login-button"
+          [disabled]="loginForm.invalid || isSubmitting"
+        >
+          <mat-spinner *ngIf="isSubmitting" diameter="20" class="spinner-inline"></mat-spinner>
+          <span *ngIf="!isSubmitting">Login</span>
+          <span *ngIf="isSubmitting">Logging in...</span>
+        </button>
+      </form>
+    </mat-card-content>
+
+    <mat-card-footer>
+      <div class="footer-links">
+        <a routerLink="/auth/register">Don't have an account? Register</a>
+      </div>
+    </mat-card-footer>
+  </mat-card>
+</div>
