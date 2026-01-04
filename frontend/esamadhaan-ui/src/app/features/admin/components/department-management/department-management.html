@@ -1,0 +1,99 @@
+<app-page-header title="Department Management" subtitle="Manage system departments">
+  <button mat-raised-button color="primary" (click)="showCreateForm()" *ngIf="!showForm">
+    <mat-icon>add</mat-icon>
+    Create Department
+  </button>
+</app-page-header>
+
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else {
+  @if (showForm) {
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>{{ editingDepartment ? 'Edit Department' : 'Create Department' }}</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="departmentForm" (ngSubmit)="onSubmit()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Department Name</mat-label>
+            <input matInput formControlName="name" placeholder="Enter department name" required />
+            <mat-error *ngIf="departmentForm.get('name')?.hasError('required')">Name is required</mat-error>
+            <mat-error *ngIf="departmentForm.get('name')?.hasError('minlength')">Name must be at least 3 characters</mat-error>
+            <mat-error *ngIf="departmentForm.get('name')?.hasError('maxlength')">Name cannot exceed 100 characters</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description</mat-label>
+            <textarea matInput formControlName="description" rows="3" placeholder="Enter department description" required></textarea>
+            <mat-hint align="end">{{ departmentForm.get('description')?.value?.length || 0 }} / 500</mat-hint>
+            <mat-error *ngIf="departmentForm.get('description')?.hasError('required')">Description is required</mat-error>
+            <mat-error *ngIf="departmentForm.get('description')?.hasError('minlength')">Description must be at least 10 characters</mat-error>
+            <mat-error *ngIf="departmentForm.get('description')?.hasError('maxlength')">Description cannot exceed 500 characters</mat-error>
+          </mat-form-field>
+
+
+          <div class="form-actions">
+            <button mat-raised-button color="primary" type="submit" [disabled]="departmentForm.invalid || isSubmitting">
+              {{ editingDepartment ? 'Update' : 'Create' }}
+            </button>
+            <button mat-button type="button" (click)="cancelForm()">Cancel</button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (departments.length === 0 && !showForm) {
+    <app-empty-state
+      icon="business"
+      message="No departments created yet"
+      subMessage="Create your first department to get started."
+    >
+      <button mat-raised-button color="primary" (click)="showCreateForm()">
+        Create New Department
+      </button>
+    </app-empty-state>
+  } @else if (!showForm) {
+    <mat-card>
+      <mat-card-content>
+        <table mat-table [dataSource]="filteredDepartments" class="department-table">
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Name</th>
+            <td mat-cell *matCellDef="let department">{{ department.name }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let department">{{ department.description || '-' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let department">
+              <button mat-icon-button (click)="showEditForm(department)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="deleteDepartment(department)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        @if (departments.length > pageSize) {
+          <mat-paginator
+            [length]="departments.length"
+            [pageSize]="pageSize"
+            [pageIndex]="pageIndex"
+            [pageSizeOptions]="[10, 25, 50]"
+            (page)="onPageChange($event)"
+          ></mat-paginator>
+        }
+      </mat-card-content>
+    </mat-card>
+  }
+}

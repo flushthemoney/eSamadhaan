@@ -12,6 +12,10 @@ export class CategoryService {
 
   constructor(private http: HttpClient) {}
 
+  getAllCategories(): Observable<CategoryDto[]> {
+    return this.http.get<CategoryDto[]>(`${this.apiUrl}/categories`);
+  }
+
   getCategoriesByDepartment(departmentId: number): Observable<CategoryDto[]> {
     return this.http.get<CategoryDto[]>(
       `${this.apiUrl}/department/${departmentId}/categories`

@@ -1,0 +1,94 @@
+<app-page-header title="Admin Dashboard" subtitle="System-wide operational overview">
+</app-page-header>
+
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else if (dashboardData) {
+  <mat-grid-list cols="4" rowHeight="150px" gutterSize="16px">
+    <mat-grid-tile>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ dashboardData.totalGrievances || 0 }}</div>
+          <div class="stat-label">Total Grievances</div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ dashboardData.resolvedGrievances || 0 }}</div>
+          <div class="stat-label">Resolved</div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ dashboardData.resolutionRate || 0 }}%</div>
+          <div class="stat-label">Resolution Rate</div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+      <mat-card class="stat-card">
+        <mat-card-content>
+          <div class="stat-value">{{ dashboardData.averageResolutionTimeInDays?.toFixed(1) || 0 }}d</div>
+          <div class="stat-label">Avg Resolution Time</div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+  </mat-grid-list>
+
+  <mat-grid-list cols="2" rowHeight="200px" gutterSize="16px" style="margin-top: 16px;">
+    <mat-grid-tile>
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Status Distribution</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="status-list">
+            <div class="status-item">
+              <span>Submitted:</span>
+              <strong>{{ dashboardData.submittedGrievances || 0 }}</strong>
+            </div>
+            <div class="status-item">
+              <span>Assigned:</span>
+              <strong>{{ dashboardData.assignedGrievances || 0 }}</strong>
+            </div>
+            <div class="status-item">
+              <span>In Review:</span>
+              <strong>{{ dashboardData.inReviewGrievances || 0 }}</strong>
+            </div>
+            <div class="status-item">
+              <span>Resolved:</span>
+              <strong>{{ dashboardData.resolvedGrievances || 0 }}</strong>
+            </div>
+            <div class="status-item">
+              <span>Closed:</span>
+              <strong>{{ dashboardData.closedGrievances || 0 }}</strong>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>System Health</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="health-metrics">
+            <div class="metric-item">
+              <div class="metric-label">Average Feedback Rating</div>
+              <div class="metric-value">{{ dashboardData.averageFeedbackRating?.toFixed(1) || 0 }}/5.0</div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+  </mat-grid-list>
+}

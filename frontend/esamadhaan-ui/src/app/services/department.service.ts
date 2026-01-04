@@ -23,5 +23,17 @@ export class DepartmentService {
   getDepartmentOfficers(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/officers`);
   }
+
+  createDepartment(request: any): Observable<any> {
+    return this.http.post<any>(this.apiUrl, request);
+  }
+
+  updateDepartment(id: number, request: any): Observable<void> {
+    return this.http.put<void>(`${this.apiUrl}/${id}`, request);
+  }
+
+  deleteDepartment(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
 }
 
