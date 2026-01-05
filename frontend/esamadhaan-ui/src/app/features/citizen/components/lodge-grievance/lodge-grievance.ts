@@ -1,6 +1,6 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -9,7 +9,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 
 import { DepartmentService } from '../../../../services/department.service';
@@ -17,7 +16,6 @@ import { CategoryService } from '../../../../services/category.service';
 import { GrievanceService } from '../../../../services/grievance.service';
 import { NotificationService } from '../../../../core/services/notification.service';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header';
-import { fileValidator } from '../../../../core/validators/file.validator';
 import { DepartmentDto } from '../../../../models/department';
 import { CategoryDto } from '../../../../models/category';
 import { CreateGrievanceRequest } from '../../../../models/grievance';
@@ -28,6 +26,7 @@ import { CreateGrievanceRequest } from '../../../../models/grievance';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    RouterModule,
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
@@ -35,7 +34,6 @@ import { CreateGrievanceRequest } from '../../../../models/grievance';
     MatIconModule,
     MatCardModule,
     MatProgressSpinnerModule,
-    MatChipsModule,
     MatDividerModule,
     PageHeaderComponent,
   ],
@@ -43,8 +41,6 @@ import { CreateGrievanceRequest } from '../../../../models/grievance';
   styleUrl: './lodge-grievance.scss',
 })
 export class LodgeGrievanceComponent implements OnInit {
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-
   lodgeGrievanceForm: FormGroup;
   departments: DepartmentDto[] = [];
   categories: CategoryDto[] = [];
@@ -52,7 +48,6 @@ export class LodgeGrievanceComponent implements OnInit {
   isLoadingCategories = false;
   isSubmitting = false;
   submitAttempted = false;
-  selectedFile: File | null = null;
   noCategoriesMessage = '';
 
   constructor(
@@ -61,11 +56,12 @@ export class LodgeGrievanceComponent implements OnInit {
     private categoryService: CategoryService,
     private grievanceService: GrievanceService,
     private notificationService: NotificationService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.lodgeGrievanceForm = this.fb.group({
       departmentId: ['', [Validators.required]],
-      categoryId: ['', [Validators.required]],
+      categoryId: [{value: '', disabled: true}, [Validators.required]],
       description: [
         '',
         [
@@ -74,7 +70,6 @@ export class LodgeGrievanceComponent implements OnInit {
           Validators.maxLength(2000),
         ],
       ],
-      attachment: [null, [fileValidator]],
     });
   }
 
@@ -95,13 +90,22 @@ export class LodgeGrievanceComponent implements OnInit {
 
   loadDepartments(): void {
     this.isLoadingDepartments = true;
+    this.cdr.markForCheck();
     this.departmentService.getAllDepartments().subscribe({
       next: (departments) => {
-        this.departments = departments;
-        this.isLoadingDepartments = false;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.departments = departments;
+          this.isLoadingDepartments = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoadingDepartments = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isLoadingDepartments = false;
+          this.cdr.detectChanges();
+        }, 0);
         this.notificationService.showError('Failed to load departments');
       },
     });
@@ -109,40 +113,32 @@ export class LodgeGrievanceComponent implements OnInit {
 
   loadCategories(departmentId: number): void {
     this.isLoadingCategories = true;
+    this.cdr.markForCheck();
     this.categoryService.getCategoriesByDepartment(departmentId).subscribe({
       next: (categories) => {
-        this.categories = categories;
-        this.lodgeGrievanceForm.get('categoryId')?.enable();
-        this.isLoadingCategories = false;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.categories = categories;
+          this.lodgeGrievanceForm.get('categoryId')?.enable();
+          this.isLoadingCategories = false;
 
-        if (categories.length === 0) {
-          this.noCategoriesMessage = 'No categories available for this department';
-        }
+          if (categories.length === 0) {
+            this.noCategoriesMessage = 'No categories available for this department';
+          }
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoadingCategories = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isLoadingCategories = false;
+          this.cdr.detectChanges();
+        }, 0);
         this.notificationService.showError('Failed to load categories');
       },
     });
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      this.selectedFile = file;
-      this.lodgeGrievanceForm.patchValue({ attachment: file });
-      this.lodgeGrievanceForm.get('attachment')?.updateValueAndValidity();
-    }
-  }
-
-  removeFile(): void {
-    this.selectedFile = null;
-    this.lodgeGrievanceForm.patchValue({ attachment: null });
-    if (this.fileInput) {
-      this.fileInput.nativeElement.value = '';
-    }
-  }
 
   onSubmit(): void {
     this.submitAttempted = true;
@@ -165,14 +161,33 @@ export class LodgeGrievanceComponent implements OnInit {
 
     this.grievanceService.lodgeGrievance(request).subscribe({
       next: (response) => {
-        this.notificationService.showSuccess(
-          `Grievance #${response.grievanceNumber} submitted successfully`
-        );
-        this.router.navigate(['/citizen/grievances', response.grievanceId]);
-        this.isSubmitting = false;
+        // Defer state changes and navigation to avoid change detection errors
+        setTimeout(() => {
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
+          
+          const message = response.grievanceNumber 
+            ? `Grievance #${response.grievanceNumber} submitted successfully`
+            : 'Grievance submitted successfully';
+          this.notificationService.showSuccess(message);
+          
+          // Navigate after change detection
+          setTimeout(() => {
+            if (response.grievanceId) {
+              this.router.navigate(['/citizen/grievances', response.grievanceId]);
+            } else {
+              this.router.navigate(['/citizen/grievances']);
+            }
+          }, 0);
+        }, 0);
       },
       error: (error) => {
-        this.isSubmitting = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
+        }, 0);
+        
         if (error.status === 400) {
           const errorMessage =
             error.error?.message || 'Failed to submit grievance. Please check your information.';
@@ -204,12 +219,6 @@ export class LodgeGrievanceComponent implements OnInit {
     }
     if (errors['maxlength']) {
       return 'Description cannot exceed 2000 characters';
-    }
-    if (errors['fileType']) {
-      return 'Only JPG, PNG, and PDF files are allowed';
-    }
-    if (errors['fileSize']) {
-      return 'File size cannot exceed 5MB';
     }
 
     return 'Invalid value';

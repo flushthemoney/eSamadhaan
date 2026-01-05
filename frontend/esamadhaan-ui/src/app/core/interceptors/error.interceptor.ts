@@ -23,13 +23,21 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         // Forbidden - insufficient permissions
         router.navigate(["/unauthorized"]);
       } else if (error.status === 404) {
-        // Not found
-        notificationService.showError("Resource not found");
+        // Not found - skip notification for resolution endpoint (resolution may not exist yet)
+        if (!req.url.includes('/resolution')) {
+          notificationService.showError("Resource not found");
+        }
       } else if (error.status === 0) {
         // Network error
-        notificationService.showError(
-          "Unable to connect to server. Please check your internet connection."
-        );
+        if (!navigator.onLine) {
+          notificationService.showError(
+            "No internet connection. Please check your network."
+          );
+        } else {
+          notificationService.showError(
+            "Connection failed. Please try again."
+          );
+        }
       } else if (error.status >= 500) {
         // Server error
         notificationService.showError(

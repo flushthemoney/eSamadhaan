@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -19,6 +19,7 @@ import { GrievanceStatusBadgeComponent } from '../../../../shared/components/gri
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog';
 import { GrievanceResponseDto, GrievanceStatusHistoryDto, ResolutionDto } from '../../../../models/grievance';
 import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
+import { GrievanceStatus, GrievanceStatusLabels } from '../../../../models/common';
 
 @Component({
   selector: 'app-grievance-detail',
@@ -52,12 +53,15 @@ export class GrievanceDetailComponent implements OnInit {
   isEscalating = false;
   escalationReason = '';
   showEscalationForm = false;
+  GrievanceStatus = GrievanceStatus;
+  GrievanceStatusLabels = GrievanceStatusLabels;
 
   constructor(
     private route: ActivatedRoute,
     private grievanceService: GrievanceService,
     private notificationService: NotificationService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -72,13 +76,22 @@ export class GrievanceDetailComponent implements OnInit {
 
   loadGrievanceDetail(id: number): void {
     this.isLoading = true;
+    this.cdr.markForCheck();
     this.grievanceService.getGrievanceById(id).subscribe({
       next: (data) => {
-        this.grievance = data;
-        this.isLoading = false;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.grievance = data;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
         this.notificationService.showError('Failed to load grievance details');
       },
     });
@@ -87,7 +100,11 @@ export class GrievanceDetailComponent implements OnInit {
   loadGrievanceHistory(id: number): void {
     this.grievanceService.getGrievanceHistory(id).subscribe({
       next: (data) => {
-        this.history = data;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.history = data;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
         // History load error is not critical
@@ -98,7 +115,11 @@ export class GrievanceDetailComponent implements OnInit {
   loadGrievanceResolution(id: number): void {
     this.grievanceService.getGrievanceResolution(id).subscribe({
       next: (data) => {
-        this.resolution = data;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.resolution = data;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
         // Resolution may not exist yet
@@ -109,10 +130,18 @@ export class GrievanceDetailComponent implements OnInit {
   checkCanEscalate(id: number): void {
     this.grievanceService.canEscalate(id).subscribe({
       next: (data) => {
-        this.canEscalate = data.canEscalate;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.canEscalate = data.canEscalate;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.canEscalate = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.canEscalate = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }
@@ -160,5 +189,9 @@ export class GrievanceDetailComponent implements OnInit {
         });
       }
     });
+  }
+
+  getStatusLabel(status: GrievanceStatus): string {
+    return GrievanceStatusLabels[status] || 'Unknown';
   }
 }

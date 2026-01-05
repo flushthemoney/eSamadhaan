@@ -45,7 +45,14 @@ export class AuthService {
     if (!token) return null;
 
     const payload = this.decodeToken(token);
-    return payload?.role || null;
+    if (!payload) return null;
+
+    // Handle both short form and full claim type URI
+    // ClaimTypes.Role can be stored as "role" or "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+    return payload.role || 
+           payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+           payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role'] ||
+           null;
   }
 
   get userId(): number | null {
@@ -147,6 +154,7 @@ export class AuthService {
   navigateByRole(): void {
     const role = this.userRole;
     if (!role) {
+      console.warn('No role found in token, redirecting to home');
       this.router.navigate(["/"]);
       return;
     }
@@ -158,7 +166,9 @@ export class AuthService {
       SystemAdmin: "/admin/dashboard",
     };
 
-    this.router.navigate([routes[role] || "/"]);
+    const route = routes[role] || "/";
+    console.log(`Navigating to ${route} for role: ${role}`);
+    this.router.navigate([route]);
   }
 }
 

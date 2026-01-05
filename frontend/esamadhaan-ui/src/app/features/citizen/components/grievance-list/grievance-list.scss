@@ -1,4 +1,26 @@
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .grievance-table {
   width: 100%;
+  min-width: 800px;
+
+  .mat-mdc-table {
+    width: 100%;
+  }
+}
+
+@media (max-width: 960px) {
+  .grievance-table {
+    min-width: 700px;
+  }
+}
+
+@media (max-width: 600px) {
+  .grievance-table {
+    min-width: 600px;
+  }
 }
 

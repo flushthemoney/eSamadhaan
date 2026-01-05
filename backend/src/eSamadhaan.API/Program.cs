@@ -186,6 +186,9 @@ var app = builder.Build();
 // Global Exception Handling (must be first)
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
+// CORS (must be early in pipeline, before authentication)
+app.UseCors("AllowAngularApp");
+
 // Swagger (Development only)
 if (app.Environment.IsDevelopment())
 {
@@ -199,9 +202,6 @@ if (app.Environment.IsDevelopment())
 
 // HTTPS Redirection
 app.UseHttpsRedirection();
-
-// CORS
-app.UseCors("AllowAngularApp");
 
 // Authentication & Authorization
 app.UseAuthentication();

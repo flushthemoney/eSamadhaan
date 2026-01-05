@@ -123,10 +123,10 @@
           <ng-container matColumnDef="actions">
             <th mat-header-cell *matHeaderCellDef>Actions</th>
             <td mat-cell *matCellDef="let user">
-              <button mat-icon-button (click)="showEditForm(user)">
+              <button mat-icon-button (click)="showEditForm(user)" aria-label="Edit user">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button [color]="user.isActive ? 'warn' : 'primary'" (click)="toggleUserStatus(user)">
+              <button mat-icon-button [color]="user.isActive ? 'warn' : 'primary'" (click)="toggleUserStatus(user)" [aria-label]="user.isActive ? 'Deactivate user' : 'Activate user'">
                 <mat-icon>{{ user.isActive ? 'block' : 'check_circle' }}</mat-icon>
               </button>
             </td>

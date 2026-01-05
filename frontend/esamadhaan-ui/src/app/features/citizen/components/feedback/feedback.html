@@ -13,8 +13,10 @@
   @for (grievance of eligibleGrievances; track grievance.id) {
     <mat-card class="feedback-card">
       <mat-card-header>
-        <mat-card-title>{{ grievance.grievanceNumber }}</mat-card-title>
-        <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
+        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+          <mat-card-title>{{ grievance.grievanceNumber }}</mat-card-title>
+          <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
+        </div>
       </mat-card-header>
       <mat-card-content>
         <p><strong>Category:</strong> {{ grievance.categoryName }}</p>

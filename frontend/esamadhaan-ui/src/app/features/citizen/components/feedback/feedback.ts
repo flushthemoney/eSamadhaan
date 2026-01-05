@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -59,7 +59,8 @@ export class FeedbackComponent implements OnInit {
     private grievanceService: GrievanceService,
     private feedbackService: FeedbackService,
     private notificationService: NotificationService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -68,15 +69,35 @@ export class FeedbackComponent implements OnInit {
 
   loadEligibleGrievances(): void {
     this.isLoading = true;
+    this.cdr.markForCheck();
+    
+    let resolvedLoaded = false;
+    let closedLoaded = false;
+    
+    const checkAndCombine = () => {
+      if (resolvedLoaded && closedLoaded) {
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.combineGrievances();
+          this.cdr.detectChanges();
+        }, 0);
+      }
+    };
     
     // Load resolved grievances
     this.grievanceService.getMyGrievances(GrievanceStatus.Resolved).subscribe({
       next: (data) => {
         this.resolvedGrievances = data;
-        this.combineGrievances();
+        resolvedLoaded = true;
+        checkAndCombine();
       },
       error: () => {
-        this.isLoading = false;
+        resolvedLoaded = true;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
 
@@ -84,16 +105,29 @@ export class FeedbackComponent implements OnInit {
     this.grievanceService.getMyGrievances(GrievanceStatus.Closed).subscribe({
       next: (data) => {
         this.closedGrievances = data;
-        this.combineGrievances();
+        closedLoaded = true;
+        checkAndCombine();
       },
       error: () => {
-        this.isLoading = false;
+        closedLoaded = true;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }
 
   combineGrievances(): void {
     this.eligibleGrievances = [...this.resolvedGrievances, ...this.closedGrievances];
+    
+    // Sort by newest first (reverse chronological order)
+    this.eligibleGrievances.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // Newest first
+    });
     
     // Check feedback for each grievance
     this.eligibleGrievances.forEach((grievance) => {
@@ -118,10 +152,14 @@ export class FeedbackComponent implements OnInit {
     this.feedbackService.getFeedback(grievanceId).subscribe({
       next: () => {
         // Feedback exists, mark grievance as feedback submitted
-        const grievance = this.eligibleGrievances.find(g => g.id === grievanceId);
-        if (grievance) {
-          (grievance as any).feedbackSubmitted = true;
-        }
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          const grievance = this.eligibleGrievances.find(g => g.id === grievanceId);
+          if (grievance) {
+            (grievance as any).feedbackSubmitted = true;
+            this.cdr.markForCheck();
+          }
+        }, 0);
       },
       error: () => {
         // No feedback exists, allow submission
@@ -152,15 +190,23 @@ export class FeedbackComponent implements OnInit {
     this.feedbackService.submitFeedback(grievanceId, request).subscribe({
       next: () => {
         this.notificationService.showSuccess('Feedback submitted successfully');
-        const grievance = this.eligibleGrievances.find(g => g.id === grievanceId);
-        if (grievance) {
-          (grievance as any).feedbackSubmitted = true;
-        }
-        this.submittingFeedback.delete(grievanceId);
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          const grievance = this.eligibleGrievances.find(g => g.id === grievanceId);
+          if (grievance) {
+            (grievance as any).feedbackSubmitted = true;
+          }
+          this.submittingFeedback.delete(grievanceId);
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
         this.notificationService.showError('Failed to submit feedback');
-        this.submittingFeedback.delete(grievanceId);
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.submittingFeedback.delete(grievanceId);
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

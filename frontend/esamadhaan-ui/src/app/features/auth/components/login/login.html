@@ -47,14 +47,12 @@
           </mat-error>
         </mat-form-field>
 
-        <mat-checkbox formControlName="rememberMe">Remember me</mat-checkbox>
-
         <button
           mat-raised-button
           color="primary"
           type="submit"
           class="full-width login-button"
-          [disabled]="loginForm.invalid || isSubmitting"
+          [disabled]="isButtonDisabled"
         >
           <mat-spinner *ngIf="isSubmitting" diameter="20" class="spinner-inline"></mat-spinner>
           <span *ngIf="!isSubmitting">Login</span>

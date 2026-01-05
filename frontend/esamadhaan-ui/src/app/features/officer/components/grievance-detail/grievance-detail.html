@@ -138,7 +138,7 @@
               <div class="timeline-item">
                 <div class="timeline-marker"></div>
                 <div class="timeline-content">
-                  <strong>{{ item.newStatus }}</strong>
+                  <strong>{{ getStatusLabel(item.newStatus) }}</strong>
                   <p>{{ item.changedByUserName }}</p>
                   <small>{{ item.changedAt | relativeTime }}</small>
                   @if (item.remarks) {

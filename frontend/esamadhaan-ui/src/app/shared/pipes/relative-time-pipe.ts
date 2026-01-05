@@ -10,12 +10,38 @@ export class RelativeTimePipe implements PipeTransform {
       return 'Unknown';
     }
 
-    const date = typeof value === 'string' ? new Date(value) : value;
+    let date: Date;
+    
+    if (typeof value === 'string') {
+      // Backend stores dates in UTC (GETUTCDATE(), DateTime.UtcNow)
+      // Ensure proper UTC parsing - if no timezone indicator, treat as UTC
+      let dateString = value.trim();
+      
+      // Check if it already has timezone info (Z for UTC or +/- offset)
+      const hasTimezone = dateString.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(dateString);
+      
+      if (!hasTimezone && dateString.includes('T')) {
+        // ISO format without timezone - append Z to indicate UTC
+        // Handle milliseconds if present
+        if (dateString.includes('.')) {
+          const parts = dateString.split('.');
+          dateString = parts[0] + 'Z';
+        } else {
+          dateString = dateString + 'Z';
+        }
+      }
+      
+      date = new Date(dateString);
+    } else {
+      date = value;
+    }
     
     if (isNaN(date.getTime())) {
       return 'Invalid date';
     }
 
+    // Calculate relative time using user's local timezone
+    // The date from server is in UTC, JavaScript Date automatically converts to local timezone
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 

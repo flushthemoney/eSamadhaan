@@ -2,8 +2,8 @@ import { Environment } from './environment.interface';
 
 export const environment: Environment = {
   production: false,
-  environmentName: "Development",
-  apiUrl: "https://localhost:5124/api",
+  environmentName: 'Development',
+  apiUrl: 'http://localhost:5124/api',
   apiTimeout: 30000, // 30 seconds
 
   // Feature Flags
@@ -19,7 +19,7 @@ export const environment: Environment = {
 
   // Authentication
   auth: {
-    tokenKey: "auth_token",
+    tokenKey: 'auth_token',
     tokenExpiryMinutes: 120,
     refreshTokenEnabled: false,
   },
@@ -33,8 +33,8 @@ export const environment: Environment = {
   // File Upload
   fileUpload: {
     maxSizeInMB: 5,
-    allowedTypes: ["application/pdf", "image/jpeg", "image/jpg", "image/png"],
-    allowedExtensions: [".pdf", ".jpg", ".jpeg", ".png"],
+    allowedTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
+    allowedExtensions: ['.pdf', '.jpg', '.jpeg', '.png'],
   },
 
   // Notification
@@ -44,23 +44,22 @@ export const environment: Environment = {
     warningDuration: 4000,
     infoDuration: 3000,
     position: {
-      horizontal: "end",
-      vertical: "top",
+      horizontal: 'end',
+      vertical: 'top',
     },
   },
 
   // Logging
   logging: {
-    level: "debug", // 'debug' | 'info' | 'warn' | 'error'
+    level: 'debug', // 'debug' | 'info' | 'warn' | 'error'
     enableConsoleLog: true,
     enableRemoteLog: false,
   },
 
   // External Services (if any)
   externalServices: {
-    analyticsId: "",
-    sentryDsn: "",
-    googleMapsApiKey: "",
+    analyticsId: '',
+    sentryDsn: '',
+    googleMapsApiKey: '',
   },
 };
-

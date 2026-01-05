@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -43,7 +43,10 @@ export class DashboardComponent implements OnInit {
   isLoading = false;
   GrievanceStatus = GrievanceStatus;
 
-  constructor(private grievanceService: GrievanceService) {}
+  constructor(
+    private grievanceService: GrievanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadGrievances();
@@ -53,11 +56,24 @@ export class DashboardComponent implements OnInit {
     this.isLoading = true;
     this.grievanceService.getMyGrievances().subscribe({
       next: (data) => {
-        this.grievances = data;
-        this.isLoading = false;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          // Sort by newest first (reverse chronological order)
+          this.grievances = data.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA; // Newest first
+          });
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }, 0);
       },
     });
   }

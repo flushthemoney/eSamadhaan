@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -56,7 +56,10 @@ export class GrievanceListComponent implements OnInit {
   pageIndex = 0;
   GrievanceStatus = GrievanceStatus;
 
-  constructor(private grievanceService: GrievanceService) {}
+  constructor(
+    private grievanceService: GrievanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadGrievances();
@@ -64,14 +67,28 @@ export class GrievanceListComponent implements OnInit {
 
   loadGrievances(): void {
     this.isLoading = true;
+    this.cdr.markForCheck();
     this.grievanceService.getMyGrievances(this.selectedStatus || undefined).subscribe({
       next: (data) => {
-        this.grievances = data;
-        this.applyPagination();
-        this.isLoading = false;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          // Sort by newest first (reverse chronological order)
+          this.grievances = data.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA; // Newest first
+          });
+          this.applyPagination();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }
@@ -85,6 +102,7 @@ export class GrievanceListComponent implements OnInit {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.applyPagination();
+    this.cdr.detectChanges();
   }
 
   private applyPagination(): void {

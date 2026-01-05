@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -12,7 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { AuthService } from '../../../../core/services/auth.service';
 import { NotificationService } from '../../../../core/services/notification.service';
-import { LoginRequest } from '../../../../models/auth';
+import { LoginRequest, LoginResponse } from '../../../../models/auth';
 
 @Component({
   selector: 'app-login',
@@ -44,12 +44,12 @@ export class LoginComponent implements OnInit {
     private authService: AuthService,
     private notificationService: NotificationService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
-      rememberMe: [false],
     });
   }
 
@@ -78,17 +78,32 @@ export class LoginComponent implements OnInit {
     };
 
     this.authService.login(credentials).subscribe({
-      next: () => {
+      next: (response: LoginResponse) => {
         this.notificationService.showSuccess('Login successful');
-        if (this.returnUrl) {
-          this.router.navigateByUrl(this.returnUrl);
-        } else {
-          this.authService.navigateByRole();
-        }
-        this.isSubmitting = false;
+        
+        // Defer state changes and navigation to avoid change detection errors
+        setTimeout(() => {
+          this.isSubmitting = false;
+          this.cdr.markForCheck();
+          
+          // Navigate after change detection using role from response
+          setTimeout(() => {
+            if (this.returnUrl) {
+              this.router.navigateByUrl(this.returnUrl);
+            } else {
+              // Use role from response for immediate navigation
+              this.navigateByRole(response.role);
+            }
+          }, 0);
+        }, 0);
       },
       error: (error) => {
-        this.isSubmitting = false;
+        // Defer state change to avoid change detection errors
+        setTimeout(() => {
+          this.isSubmitting = false;
+          this.cdr.markForCheck();
+        }, 0);
+        
         if (error.status === 401) {
           this.notificationService.showError('Invalid email or password');
         } else if (error.status === 0) {
@@ -101,6 +116,23 @@ export class LoginComponent implements OnInit {
         }
       },
     });
+  }
+
+  get isButtonDisabled(): boolean {
+    return this.loginForm.invalid || this.isSubmitting;
+  }
+
+  private navigateByRole(role: string): void {
+    const routes: Record<string, string> = {
+      Citizen: "/citizen/dashboard",
+      DepartmentOfficer: "/officer/dashboard",
+      SupervisoryOfficer: "/supervisor/dashboard",
+      SystemAdmin: "/admin/dashboard",
+    };
+
+    const route = routes[role] || "/";
+    console.log(`Navigating to ${route} for role: ${role}`);
+    this.router.navigate([route]);
   }
 
   shouldShowError(fieldName: string): boolean {

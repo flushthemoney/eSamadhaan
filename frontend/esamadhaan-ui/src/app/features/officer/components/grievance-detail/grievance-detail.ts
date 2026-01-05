@@ -20,7 +20,7 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header';
 import { GrievanceStatusBadgeComponent } from '../../../../shared/components/grievance-status-badge/grievance-status-badge';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog';
-import { GrievanceStatus } from '../../../../models/common';
+import { GrievanceStatus, GrievanceStatusLabels } from '../../../../models/common';
 import { CreateAssignmentRequest } from '../../../../models/assignment';
 import { CreateResolutionRequest } from '../../../../models/resolution';
 import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
@@ -245,5 +245,9 @@ export class GrievanceDetailComponent implements OnInit {
 
   get isUnassigned(): boolean {
     return !this.grievance?.currentAssignment;
+  }
+
+  getStatusLabel(status: GrievanceStatus): string {
+    return GrievanceStatusLabels[status] || 'Unknown';
   }
 }

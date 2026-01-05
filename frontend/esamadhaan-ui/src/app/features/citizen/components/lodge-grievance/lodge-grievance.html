@@ -23,7 +23,7 @@
 
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Category</mat-label>
-        <mat-select formControlName="categoryId" [disabled]="!lodgeGrievanceForm.get('departmentId')?.value || isLoadingCategories">
+        <mat-select formControlName="categoryId">
           <mat-option [value]="">Select category</mat-option>
           @for (cat of categories; track cat.id) {
             <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
@@ -53,31 +53,6 @@
         <mat-hint align="end">{{ descriptionLength }} / 2000 characters</mat-hint>
         <mat-error *ngIf="shouldShowError('description')">
           {{ getErrorMessage('description') }}
-        </mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Attachment (Optional)</mat-label>
-        <input
-          #fileInput
-          type="file"
-          matInput
-          (change)="onFileSelected($event)"
-          accept=".jpg,.jpeg,.png,.pdf"
-        />
-        @if (selectedFile) {
-          <mat-chip-set>
-            <mat-chip (removed)="removeFile()">
-              {{ selectedFile.name }}
-              <button matChipRemove>
-                <mat-icon>cancel</mat-icon>
-              </button>
-            </mat-chip>
-          </mat-chip-set>
-        }
-        <mat-hint>Only JPG, PNG, and PDF files up to 5MB</mat-hint>
-        <mat-error *ngIf="shouldShowError('attachment')">
-          {{ getErrorMessage('attachment') }}
         </mat-error>
       </mat-form-field>
 
