@@ -108,9 +108,10 @@ export class GrievanceService {
     return this.http.get<any[]>(`${environment.apiUrl}/officer/grievances`, { params });
   }
 
-  updateGrievanceStatus(grievanceId: number, status: number): Observable<void> {
+  updateGrievanceStatus(grievanceId: number, status: number, remarks?: string): Observable<void> {
     return this.http.put<void>(`${this.apiUrl}/${grievanceId}/status`, {
-      status,
+      newStatus: status,
+      remarks: remarks || null,
     });
   }
 
@@ -120,6 +121,16 @@ export class GrievanceService {
   ): Observable<void> {
     return this.http.post<void>(
       `${this.apiUrl}/${grievanceId}/assign`,
+      request
+    );
+  }
+
+  reassignGrievance(
+    grievanceId: number,
+    request: any
+  ): Observable<void> {
+    return this.http.put<void>(
+      `${this.apiUrl}/${grievanceId}/reassign`,
       request
     );
   }

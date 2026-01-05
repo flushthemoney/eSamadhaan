@@ -1,5 +1,15 @@
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .category-table {
   width: 100%;
+  min-width: 600px;
+
+  .mat-mdc-table {
+    width: 100%;
+  }
 }
 
 .full-width {
@@ -11,5 +21,17 @@
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+}
+
+@media (max-width: 960px) {
+  .category-table {
+    min-width: 500px;
+  }
+}
+
+@media (max-width: 600px) {
+  .category-table {
+    min-width: 400px;
+  }
 }
 

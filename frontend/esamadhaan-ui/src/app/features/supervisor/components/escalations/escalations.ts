@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -44,7 +44,10 @@ export class EscalationsComponent implements OnInit {
   pageSize = 25;
   pageIndex = 0;
 
-  constructor(private grievanceService: GrievanceService) {}
+  constructor(
+    private grievanceService: GrievanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadEscalations();
@@ -54,12 +57,18 @@ export class EscalationsComponent implements OnInit {
     this.isLoading = true;
     this.grievanceService.getEscalatedGrievances().subscribe({
       next: (data) => {
-        this.escalations = data;
-        this.applyPagination();
-        this.isLoading = false;
+        setTimeout(() => {
+          this.escalations = data;
+          this.applyPagination();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

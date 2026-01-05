@@ -20,19 +20,22 @@ public class GrievanceController : ControllerBase
     private readonly IResolutionService _resolutionService;
     private readonly IFeedbackService _feedbackService;
     private readonly IReportService _reportService;
+    private readonly IUserService _userService;
 
     public GrievanceController(
         IGrievanceService grievanceService,
         IAssignmentService assignmentService,
         IResolutionService resolutionService,
         IFeedbackService feedbackService,
-        IReportService reportService)
+        IReportService reportService,
+        IUserService userService)
     {
         _grievanceService = grievanceService;
         _assignmentService = assignmentService;
         _resolutionService = resolutionService;
         _feedbackService = feedbackService;
         _reportService = reportService;
+        _userService = userService;
     }
 
     /// <summary>
@@ -74,6 +77,54 @@ public class GrievanceController : ControllerBase
             assignedByUserId);
 
         return Ok(new { assignmentId, message = "Grievance assigned successfully" });
+    }
+
+    /// <summary>
+    /// Reassign grievance to another officer (DepartmentOfficer, SupervisoryOfficer, SystemAdmin)
+    /// DepartmentOfficers can only reassign grievances from their own department
+    /// </summary>
+    [HttpPut("{grievanceId}/reassign")]
+    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> ReassignGrievance(
+        int grievanceId,
+        [FromBody] ReassignmentRequestDto request)
+    {
+        var currentUserId = GetCurrentUserId();
+        var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        // Get current user to verify department access
+        var currentUser = await _userService.GetUserByIdAsync(currentUserId);
+
+        // Get grievance to verify it exists and check department
+        var grievance = await _grievanceService.GetGrievanceByIdAsync(grievanceId);
+        var grievanceDto = grievance as dynamic;
+
+        if (grievanceDto == null)
+        {
+            return NotFound(new { message = "Grievance not found" });
+        }
+
+        // For DepartmentOfficer, verify they belong to the same department as the grievance
+        if (userRole == "DepartmentOfficer")
+        {
+            if (!currentUser.DepartmentId.HasValue)
+            {
+                return BadRequest(new { message = "Officer must be assigned to a department" });
+            }
+
+            if (currentUser.DepartmentId.Value != grievanceDto.DepartmentId)
+            {
+                return Forbid(); // 403 Forbidden - User doesn't have access to this department
+            }
+        }
+
+        await _assignmentService.ReassignGrievanceAsync(
+            grievanceId,
+            request.NewOfficerId,
+            currentUserId,
+            request.Reason);
+
+        return Ok(new { message = "Grievance reassigned successfully" });
     }
 
     /// <summary>

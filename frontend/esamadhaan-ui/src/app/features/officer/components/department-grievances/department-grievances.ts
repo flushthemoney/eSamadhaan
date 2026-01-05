@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -64,7 +64,8 @@ export class DepartmentGrievancesComponent implements OnInit {
   constructor(
     private grievanceService: GrievanceService,
     private categoryService: CategoryService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {
     this.departmentId = this.authService.departmentId;
   }
@@ -81,11 +82,17 @@ export class DepartmentGrievancesComponent implements OnInit {
     this.isLoadingCategories = true;
     this.categoryService.getCategoriesByDepartment(this.departmentId).subscribe({
       next: (data) => {
-        this.categories = data;
-        this.isLoadingCategories = false;
+        setTimeout(() => {
+          this.categories = data;
+          this.isLoadingCategories = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoadingCategories = false;
+        setTimeout(() => {
+          this.isLoadingCategories = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }
@@ -99,12 +106,18 @@ export class DepartmentGrievancesComponent implements OnInit {
 
     this.grievanceService.getDepartmentGrievances(filters).subscribe({
       next: (data) => {
-        this.grievances = data;
-        this.applyPagination();
-        this.isLoading = false;
+        setTimeout(() => {
+          this.grievances = data;
+          this.applyPagination();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

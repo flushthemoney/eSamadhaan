@@ -84,8 +84,10 @@ public class AssignmentService : IAssignmentService
         grievance.UpdatedAt = DateTime.UtcNow;
         await _grievanceRepository.UpdateAsync(grievance);
 
-        // Record status history
-        await RecordStatusHistoryAsync(grievanceId, oldStatus, GrievanceStatus.Assigned, assignedByUserId);
+        // Record status history with assignment remark
+        var officerName = officer.Name ?? "Unknown Officer";
+        var assignmentRemarks = $"Grievance assigned to {officerName}";
+        await RecordStatusHistoryAsync(grievanceId, oldStatus, GrievanceStatus.Assigned, assignedByUserId, assignmentRemarks);
 
         return createdAssignment.Id;
     }
@@ -131,6 +133,14 @@ public class AssignmentService : IAssignmentService
             throw new ValidationException("Cannot reassign to the same officer.");
         }
 
+        // Capture current status before any updates
+        var currentStatus = grievance.CurrentStatus;
+
+        // Get old officer name for remarks
+        var oldOfficer = await _userRepository.GetByIdAsync(currentAssignment.OfficerId);
+        var oldOfficerName = oldOfficer?.Name ?? "Unknown";
+        var newOfficerName = newOfficer.Name;
+
         // Deactivate current assignment
         currentAssignment.IsActive = false;
         await _assignmentRepository.UpdateAsync(currentAssignment);
@@ -149,6 +159,14 @@ public class AssignmentService : IAssignmentService
         // Update grievance timestamp
         grievance.UpdatedAt = DateTime.UtcNow;
         await _grievanceRepository.UpdateAsync(grievance);
+
+        // Record status history for reassignment
+        var reassignmentRemarks = $"Grievance reassigned from {oldOfficerName} to {newOfficerName}";
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            reassignmentRemarks += $". Reason: {reason}";
+        }
+        await RecordStatusHistoryAsync(grievanceId, currentStatus, currentStatus, reassignedByUserId, reassignmentRemarks);
     }
 
     public async Task<object?> GetActiveAssignmentByGrievanceIdAsync(int grievanceId)
@@ -241,7 +259,7 @@ public class AssignmentService : IAssignmentService
 
     // Private helper methods
 
-    private async Task RecordStatusHistoryAsync(int grievanceId, GrievanceStatus oldStatus, GrievanceStatus newStatus, int changedByUserId)
+    private async Task RecordStatusHistoryAsync(int grievanceId, GrievanceStatus oldStatus, GrievanceStatus newStatus, int changedByUserId, string? remarks = null)
     {
         var history = new GrievanceStatusHistory
         {
@@ -249,7 +267,8 @@ public class AssignmentService : IAssignmentService
             OldStatus = oldStatus,
             NewStatus = newStatus,
             ChangedByUserId = changedByUserId,
-            ChangedAt = DateTime.UtcNow
+            ChangedAt = DateTime.UtcNow,
+            Remarks = remarks
         };
 
         await _statusHistoryRepository.CreateAsync(history);
@@ -262,7 +281,9 @@ public class AssignmentService : IAssignmentService
             Id = assignment.Id,
             GrievanceId = assignment.GrievanceId,
             GrievanceNumber = assignment.Grievance?.GrievanceNumber ?? string.Empty,
-            AssignedAt = assignment.AssignedAt
+            CategoryName = assignment.Grievance?.Category?.Name ?? string.Empty,
+            CurrentStatus = assignment.Grievance?.CurrentStatus ?? GrievanceStatus.Submitted,
+            CreatedAt = assignment.Grievance?.CreatedAt ?? DateTime.UtcNow
         };
     }
 }

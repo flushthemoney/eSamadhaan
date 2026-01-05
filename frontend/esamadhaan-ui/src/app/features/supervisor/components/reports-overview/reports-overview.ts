@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -31,7 +31,10 @@ export class ReportsOverviewComponent implements OnInit {
   displayedColumns: string[] = ['status', 'count', 'percentage'];
   GrievanceStatus = GrievanceStatus;
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadStatusReport();
@@ -41,11 +44,17 @@ export class ReportsOverviewComponent implements OnInit {
     this.isLoading = true;
     this.reportService.getStatusReport().subscribe({
       next: (data) => {
-        this.statusReport = data;
-        this.isLoading = false;
+        setTimeout(() => {
+          this.statusReport = data;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

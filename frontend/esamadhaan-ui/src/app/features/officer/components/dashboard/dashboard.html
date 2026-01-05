@@ -1,79 +1,84 @@
-<app-page-header title="Officer Dashboard" subtitle="Overview of department grievances and your workload">
+<app-page-header
+  title="Officer Dashboard"
+  subtitle="Overview of department grievances and your workload"
+>
 </app-page-header>
 
 @if (isLoading) {
-  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+<app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
 } @else if (dashboardData) {
-  <mat-grid-list cols="4" rowHeight="150px" gutterSize="16px">
-    <mat-grid-tile>
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-value">{{ dashboardData.totalGrievances || 0 }}</div>
-          <div class="stat-label">Total Grievances</div>
-        </mat-card-content>
-      </mat-card>
-    </mat-grid-tile>
-
-    <mat-grid-tile>
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-value">{{ dashboardData.resolvedGrievances || 0 }}</div>
-          <div class="stat-label">Resolved/Closed</div>
-        </mat-card-content>
-      </mat-card>
-    </mat-grid-tile>
-
-    <mat-grid-tile>
-      <mat-card class="stat-card primary">
-        <mat-card-content>
-          <div class="stat-value">{{ dashboardData.myAssignedGrievances || 0 }}</div>
-          <div class="stat-label">My Assigned</div>
-        </mat-card-content>
-      </mat-card>
-    </mat-grid-tile>
-
-    <mat-grid-tile>
-      <mat-card class="stat-card">
-        <mat-card-content>
-          <div class="stat-value">{{ dashboardData.resolutionRate || 0 }}%</div>
-          <div class="stat-label">Resolution Rate</div>
-        </mat-card-content>
-      </mat-card>
-    </mat-grid-tile>
-  </mat-grid-list>
-
-  @if (!hasAssignedGrievances) {
-    <mat-card style="margin-top: 2rem;">
-      <app-empty-state
-        icon="inbox"
-        message="No grievances assigned to you yet"
-        subMessage="View all department grievances to find assignments."
-      >
-        <button mat-raised-button color="primary" routerLink="/officer/department-grievances">
-          View Department Grievances
-        </button>
-      </app-empty-state>
-    </mat-card>
-  } @else {
-    <mat-card style="margin-top: 2rem;">
-      <mat-card-header>
-        <mat-card-title>Recent Assignments</mat-card-title>
-      </mat-card-header>
+<mat-grid-list cols="4" rowHeight="150px" gutterSize="16px">
+  <mat-grid-tile>
+    <mat-card class="stat-card">
       <mat-card-content>
-        @if (dashboardData.recentAssignments && dashboardData.recentAssignments.length > 0) {
-          <div class="assignment-list">
-            @for (assignment of dashboardData.recentAssignments.slice(0, 5); track assignment.grievanceId) {
-              <div class="assignment-item">
-                <span>{{ assignment.grievanceNumber }}</span>
-                <span>{{ assignment.officerName }}</span>
-                <span class="date">{{ assignment.assignedAt | date:'short' }}</span>
-              </div>
-            }
-          </div>
-        } @else {
-          <p>No recent assignments</p>
-        }
+        <div class="stat-value">{{ dashboardData.totalGrievances || 0 }}</div>
+        <div class="stat-label">Total Grievances</div>
       </mat-card-content>
     </mat-card>
-  }
+  </mat-grid-tile>
+
+  <mat-grid-tile>
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-value">
+          {{ dashboardData.resolvedCount || 0 }}
+        </div>
+        <div class="stat-label">Resolved/Closed</div>
+      </mat-card-content>
+    </mat-card>
+  </mat-grid-tile>
+
+  <mat-grid-tile>
+    <mat-card class="stat-card primary">
+      <mat-card-content>
+        <div class="stat-value">{{ dashboardData.officerWorkload?.activeAssignments || 0 }}</div>
+        <div class="stat-label">Assigned To You</div>
+      </mat-card-content>
+    </mat-card>
+  </mat-grid-tile>
+
+  <mat-grid-tile>
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-value">{{ getResolutionRate() }}%</div>
+        <div class="stat-label">Resolution Rate</div>
+      </mat-card-content>
+    </mat-card>
+  </mat-grid-tile>
+</mat-grid-list>
+
+<mat-card style="margin-top: 2rem">
+  <mat-card-header>
+    <mat-card-title>Recent Department Grievances</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    @if (dashboardData.recentGrievances && dashboardData.recentGrievances.length > 0) {
+    <mat-list>
+      @for (grievance of dashboardData.recentGrievances.slice(0, 10); track grievance.id) {
+      <a mat-list-item [routerLink]="['/officer/grievances', grievance.id]">
+        <mat-icon matListItemIcon>description</mat-icon>
+        <div matListItemTitle>
+          <span>{{ grievance.grievanceNumber }}</span>
+        </div>
+        <div matListItemLine>
+          {{ formatDate(grievance.createdAt) | date : 'short' }}
+        </div>
+        <div matListItemMeta>
+          <app-grievance-status-badge
+            [status]="grievance.currentStatus"
+          ></app-grievance-status-badge>
+        </div>
+      </a>
+      <mat-divider></mat-divider>
+      }
+    </mat-list>
+    } @else {
+    <app-empty-state
+      icon="inbox"
+      message="No recent grievances"
+      subMessage="There are no recent grievances in your department."
+    ></app-empty-state>
+    }
+  </mat-card-content>
+</mat-card>
 }

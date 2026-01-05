@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -36,7 +36,10 @@ export class ReportsOfficerComponent implements OnInit {
   isLoading = false;
   topCount: number = 10;
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadOfficerPerformance();
@@ -46,11 +49,17 @@ export class ReportsOfficerComponent implements OnInit {
     this.isLoading = true;
     this.reportService.getOfficerPerformanceReport(this.topCount).subscribe({
       next: (data) => {
-        this.officerPerformance = data;
-        this.isLoading = false;
+        setTimeout(() => {
+          this.officerPerformance = data;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

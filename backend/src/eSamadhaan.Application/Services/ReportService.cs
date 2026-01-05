@@ -753,7 +753,8 @@ public class ReportService : IReportService
 
         // Officer's workload
         var activeAssignments = _assignmentRepository.GetQueryable()
-            .Count(a => a.OfficerId == userId && a.IsActive);
+            .Count(a => a.OfficerId == userId && a.IsActive && 
+                        a.Grievance.CurrentStatus != GrievanceStatus.Closed);
         
         var totalResolutions = _resolutionRepository.GetQueryable()
             .Count(r => r.ResolvedByOfficerId == userId);

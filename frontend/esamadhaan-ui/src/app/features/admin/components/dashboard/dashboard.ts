@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -32,7 +32,10 @@ export class AdminDashboardComponent implements OnInit {
   dashboardData: any = null;
   isLoading = false;
 
-  constructor(private grievanceService: GrievanceService) {}
+  constructor(
+    private grievanceService: GrievanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadDashboard();
@@ -42,11 +45,17 @@ export class AdminDashboardComponent implements OnInit {
     this.isLoading = true;
     this.grievanceService.getSupervisorDashboard().subscribe({
       next: (data) => {
-        this.dashboardData = data;
-        this.isLoading = false;
+        setTimeout(() => {
+          this.dashboardData = data;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

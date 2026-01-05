@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -63,7 +63,8 @@ export class CategoryManagementComponent implements OnInit {
     private departmentService: DepartmentService,
     private notificationService: NotificationService,
     private dialog: MatDialog,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.categoryForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
@@ -81,12 +82,18 @@ export class CategoryManagementComponent implements OnInit {
     this.isLoading = true;
     this.categoryService.getAllCategories().subscribe({
       next: (data: CategoryDto[]) => {
-        this.categories = data;
-        this.applyPagination();
-        this.isLoading = false;
+        setTimeout(() => {
+          this.categories = data;
+          this.applyPagination();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

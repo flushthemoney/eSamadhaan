@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -21,8 +21,9 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
 import { GrievanceStatusBadgeComponent } from '../../../../shared/components/grievance-status-badge/grievance-status-badge';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog';
 import { GrievanceStatus, GrievanceStatusLabels } from '../../../../models/common';
-import { CreateAssignmentRequest } from '../../../../models/assignment';
+import { CreateAssignmentRequest, ReassignmentRequest } from '../../../../models/assignment';
 import { CreateResolutionRequest } from '../../../../models/resolution';
+import { OfficerStatusHistoryDto } from '../../../../models/grievance';
 import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
 
 @Component({
@@ -54,6 +55,7 @@ export class GrievanceDetailComponent implements OnInit {
   isLoading = false;
   isLoadingOfficers = false;
   GrievanceStatus = GrievanceStatus;
+  currentUserId: number | null = null;
 
   // Assignment
   showAssignForm = false;
@@ -76,7 +78,8 @@ export class GrievanceDetailComponent implements OnInit {
     private authService: AuthService,
     private notificationService: NotificationService,
     private dialog: MatDialog,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.assignForm = this.fb.group({
       officerId: ['', [Validators.required]],
@@ -89,6 +92,7 @@ export class GrievanceDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
+    this.currentUserId = this.authService.userId;
     if (id) {
       this.loadGrievanceDetail(+id);
       this.loadOfficers();
@@ -99,11 +103,19 @@ export class GrievanceDetailComponent implements OnInit {
     this.isLoading = true;
     this.grievanceService.getOfficerGrievanceDetail(id).subscribe({
       next: (data) => {
-        this.grievance = data;
-        this.isLoading = false;
+        // Use setTimeout to defer change detection to next tick to avoid ExpressionChangedAfterItHasBeenCheckedError
+        setTimeout(() => {
+          this.grievance = data;
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        // Use setTimeout to defer change detection to next tick to avoid ExpressionChangedAfterItHasBeenCheckedError
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.markForCheck();
+        }, 0);
         this.notificationService.showError('Failed to load grievance details');
       },
     });
@@ -130,23 +142,48 @@ export class GrievanceDetailComponent implements OnInit {
     if (this.assignForm.invalid || !this.grievance) return;
 
     this.isAssigning = true;
-    const request: CreateAssignmentRequest = {
-      officerId: this.assignForm.value.officerId,
-    };
+    const isReassignment = this.grievance.currentStatus !== GrievanceStatus.Submitted;
 
-    this.grievanceService.assignGrievance(this.grievance.id, request).subscribe({
-      next: () => {
-        this.notificationService.showSuccess('Grievance assigned successfully');
-        this.showAssignForm = false;
-        this.assignForm.reset();
-        this.loadGrievanceDetail(this.grievance.id);
-        this.isAssigning = false;
-      },
-      error: () => {
-        this.isAssigning = false;
-        this.notificationService.showError('Failed to assign grievance');
-      },
-    });
+    if (isReassignment) {
+      // Use reassign endpoint
+      const request = {
+        newOfficerId: this.assignForm.value.officerId,
+        reason: null,
+      };
+
+      this.grievanceService.reassignGrievance(this.grievance.id, request).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Grievance reassigned successfully');
+          this.showAssignForm = false;
+          this.assignForm.reset();
+          this.loadGrievanceDetail(this.grievance.id);
+          this.isAssigning = false;
+        },
+        error: () => {
+          this.isAssigning = false;
+          this.notificationService.showError('Failed to reassign grievance');
+        },
+      });
+    } else {
+      // Use assign endpoint for initial assignment
+      const request: CreateAssignmentRequest = {
+        officerId: this.assignForm.value.officerId,
+      };
+
+      this.grievanceService.assignGrievance(this.grievance.id, request).subscribe({
+        next: () => {
+          this.notificationService.showSuccess('Grievance assigned successfully');
+          this.showAssignForm = false;
+          this.assignForm.reset();
+          this.loadGrievanceDetail(this.grievance.id);
+          this.isAssigning = false;
+        },
+        error: () => {
+          this.isAssigning = false;
+          this.notificationService.showError('Failed to assign grievance');
+        },
+      });
+    }
   }
 
   updateStatus(newStatus: GrievanceStatus): void {
@@ -247,7 +284,72 @@ export class GrievanceDetailComponent implements OnInit {
     return !this.grievance?.currentAssignment;
   }
 
+  get isAssignedToMe(): boolean {
+    if (!this.grievance?.currentAssignment || !this.currentUserId) {
+      return false;
+    }
+    return this.grievance.currentAssignment.officerId === this.currentUserId;
+  }
+
+  get shouldShowActions(): boolean {
+    return this.grievance?.currentStatus !== GrievanceStatus.Closed;
+  }
+
+  get shouldShowAssignButton(): boolean {
+    if (!this.grievance) return false;
+    const status = this.grievance.currentStatus;
+    const isAssigned = this.isAssignedToMe;
+
+    // Show assign button if status is 1 (Submitted)
+    if (status === GrievanceStatus.Submitted) {
+      return true;
+    }
+    // Show reassign button if status > 1 and not assigned to me
+    if (status > GrievanceStatus.Submitted && !isAssigned) {
+      return true;
+    }
+    // Show reassign button if assigned to me and status is 2 or 3 (not 4)
+    if (
+      isAssigned &&
+      (status === GrievanceStatus.Assigned || status === GrievanceStatus.InReview)
+    ) {
+      return true;
+    }
+    return false;
+  }
+
+  get assignButtonText(): string {
+    if (!this.grievance) return 'Assign Grievance';
+    return this.grievance.currentStatus === GrievanceStatus.Submitted
+      ? 'Assign Grievance'
+      : 'Reassign Grievance';
+  }
+
+  get shouldShowInReviewButton(): boolean {
+    return this.isAssignedToMe && this.grievance?.currentStatus === GrievanceStatus.Assigned;
+  }
+
+  get shouldShowSubmitResolutionButton(): boolean {
+    return this.isAssignedToMe && this.grievance?.currentStatus === GrievanceStatus.InReview;
+  }
+
+  get shouldShowCloseButton(): boolean {
+    return this.isAssignedToMe && this.grievance?.currentStatus === GrievanceStatus.Resolved;
+  }
+
   getStatusLabel(status: GrievanceStatus): string {
     return GrievanceStatusLabels[status] || 'Unknown';
+  }
+
+  getStatusHistoryLabel(item: OfficerStatusHistoryDto): string {
+    // Check if this is a reassignment by looking at the remarks
+    if (
+      item.newStatus === GrievanceStatus.Assigned &&
+      item.remarks &&
+      item.remarks.toLowerCase().includes('reassigned')
+    ) {
+      return 'Reassigned';
+    }
+    return this.getStatusLabel(item.newStatus);
   }
 }

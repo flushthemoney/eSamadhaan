@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -72,7 +72,8 @@ export class GrievanceMonitorComponent implements OnInit {
     private grievanceService: GrievanceService,
     private departmentService: DepartmentService,
     private categoryService: CategoryService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.searchForm = this.fb.group({
       grievanceNumber: [''],
@@ -101,12 +102,18 @@ export class GrievanceMonitorComponent implements OnInit {
     this.isLoading = true;
     this.grievanceService.getAllGrievances().subscribe({
       next: (data) => {
-        this.grievances = data;
-        this.applyPagination();
-        this.isLoading = false;
+        setTimeout(() => {
+          this.grievances = data;
+          this.applyPagination();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }
@@ -151,13 +158,19 @@ export class GrievanceMonitorComponent implements OnInit {
 
     this.grievanceService.searchGrievances(searchCriteria).subscribe({
       next: (data) => {
-        this.grievances = data;
-        this.pageIndex = 0;
-        this.applyPagination();
-        this.isSearching = false;
+        setTimeout(() => {
+          this.grievances = data;
+          this.pageIndex = 0;
+          this.applyPagination();
+          this.isSearching = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isSearching = false;
+        setTimeout(() => {
+          this.isSearching = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

@@ -4,6 +4,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
 
   &.primary {
     background-color: rgba(33, 150, 243, 0.1);
@@ -23,21 +30,17 @@
   }
 }
 
-.assignment-list {
-  .assignment-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+a[mat-list-item] {
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
 
-    &:last-child {
-      border-bottom: none;
-    }
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    transform: translateX(4px);
+  }
 
-    .date {
-      color: rgba(0, 0, 0, 0.6);
-      font-size: 14px;
-    }
+  &:active {
+    background-color: rgba(0, 0, 0, 0.08) !important;
   }
 }
 

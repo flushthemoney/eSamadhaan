@@ -33,47 +33,45 @@
       </mat-card-content>
     </mat-card>
 
-    <mat-card>
-      <mat-card-header>
-        <mat-card-title>Actions</mat-card-title>
-      </mat-card-header>
-      <mat-card-content>
-        <div class="action-buttons">
-          @if (isUnassigned) {
-            <button mat-raised-button color="primary" (click)="showAssignDialog()">
-              Assign Grievance
-            </button>
-          }
+    @if (shouldShowActions) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Actions</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="action-buttons">
+            @if (shouldShowAssignButton) {
+              <button mat-raised-button color="primary" (click)="showAssignDialog()">
+                {{ assignButtonText }}
+              </button>
+            }
 
-          <button mat-raised-button color="accent" (click)="updateStatus(GrievanceStatus.Assigned)" 
-            [disabled]="grievance.currentStatus === GrievanceStatus.Assigned">
-            Mark as Assigned
-          </button>
+            @if (shouldShowInReviewButton) {
+              <button mat-raised-button color="accent" (click)="updateStatus(GrievanceStatus.InReview)">
+                Mark as In Review
+              </button>
+            }
 
-          <button mat-raised-button color="accent" (click)="updateStatus(GrievanceStatus.InReview)"
-            [disabled]="grievance.currentStatus === GrievanceStatus.InReview">
-            Mark as In Review
-          </button>
+            @if (shouldShowSubmitResolutionButton) {
+              <button mat-raised-button color="primary" (click)="showResolutionDialog()">
+                Submit Resolution
+              </button>
+            }
 
-          @if (grievance.currentStatus !== GrievanceStatus.Resolved && grievance.currentStatus !== GrievanceStatus.Closed) {
-            <button mat-raised-button color="primary" (click)="showResolutionDialog()">
-              Submit Resolution
-            </button>
-          }
-
-          @if (grievance.currentStatus === GrievanceStatus.Resolved) {
-            <button mat-raised-button color="warn" (click)="closeGrievance()">
-              Close Grievance
-            </button>
-          }
-        </div>
-      </mat-card-content>
-    </mat-card>
+            @if (shouldShowCloseButton) {
+              <button mat-raised-button color="warn" (click)="closeGrievance()">
+                Close Grievance
+              </button>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
 
     @if (showAssignForm) {
       <mat-card>
         <mat-card-header>
-          <mat-card-title>Assign Grievance</mat-card-title>
+          <mat-card-title>{{ assignButtonText }}</mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <form [formGroup]="assignForm" (ngSubmit)="assignGrievance()">
@@ -138,7 +136,7 @@
               <div class="timeline-item">
                 <div class="timeline-marker"></div>
                 <div class="timeline-content">
-                  <strong>{{ getStatusLabel(item.newStatus) }}</strong>
+                  <strong>{{ getStatusHistoryLabel(item) }}</strong>
                   <p>{{ item.changedByUserName }}</p>
                   <small>{{ item.changedAt | relativeTime }}</small>
                   @if (item.remarks) {

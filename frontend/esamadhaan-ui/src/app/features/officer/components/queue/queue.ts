@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -54,7 +54,10 @@ export class QueueComponent implements OnInit {
   pageIndex = 0;
   GrievanceStatus = GrievanceStatus;
 
-  constructor(private grievanceService: GrievanceService) {}
+  constructor(
+    private grievanceService: GrievanceService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadQueue();
@@ -68,12 +71,18 @@ export class QueueComponent implements OnInit {
 
     this.grievanceService.getMyQueue(filters).subscribe({
       next: (data) => {
-        this.grievances = data;
-        this.applyPagination();
-        this.isLoading = false;
+        setTimeout(() => {
+          this.grievances = data;
+          this.applyPagination();
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }

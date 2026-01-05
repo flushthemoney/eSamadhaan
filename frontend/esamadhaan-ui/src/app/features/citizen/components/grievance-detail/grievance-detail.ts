@@ -17,7 +17,11 @@ import { LoadingSpinnerComponent } from '../../../../shared/components/loading-s
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header';
 import { GrievanceStatusBadgeComponent } from '../../../../shared/components/grievance-status-badge/grievance-status-badge';
 import { ConfirmationDialogComponent } from '../../../../shared/components/confirmation-dialog/confirmation-dialog';
-import { GrievanceResponseDto, GrievanceStatusHistoryDto, ResolutionDto } from '../../../../models/grievance';
+import {
+  GrievanceResponseDto,
+  GrievanceStatusHistoryDto,
+  ResolutionDto,
+} from '../../../../models/grievance';
 import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
 import { GrievanceStatus, GrievanceStatusLabels } from '../../../../models/common';
 
@@ -171,27 +175,41 @@ export class GrievanceDetailComponent implements OnInit {
     dialogRef.afterClosed().subscribe((confirmed) => {
       if (confirmed && this.grievance) {
         this.isEscalating = true;
-        this.grievanceService.escalateGrievance(this.grievance.id, this.escalationReason).subscribe({
-          next: () => {
-            this.notificationService.showSuccess('Grievance escalated successfully');
-            this.showEscalationForm = false;
-            this.escalationReason = '';
-            if (this.grievance) {
-              this.loadGrievanceDetail(this.grievance.id);
-              this.checkCanEscalate(this.grievance.id);
-            }
-            this.isEscalating = false;
-          },
-          error: () => {
-            this.isEscalating = false;
-            this.notificationService.showError('Failed to escalate grievance');
-          },
-        });
+        this.grievanceService
+          .escalateGrievance(this.grievance.id, this.escalationReason)
+          .subscribe({
+            next: () => {
+              this.notificationService.showSuccess('Grievance escalated successfully');
+              this.showEscalationForm = false;
+              this.escalationReason = '';
+              if (this.grievance) {
+                this.loadGrievanceDetail(this.grievance.id);
+                this.checkCanEscalate(this.grievance.id);
+              }
+              this.isEscalating = false;
+            },
+            error: () => {
+              this.isEscalating = false;
+              this.notificationService.showError('Failed to escalate grievance');
+            },
+          });
       }
     });
   }
 
   getStatusLabel(status: GrievanceStatus): string {
     return GrievanceStatusLabels[status] || 'Unknown';
+  }
+
+  getStatusHistoryLabel(item: GrievanceStatusHistoryDto): string {
+    // Check if this is a reassignment by looking at the remarks
+    if (
+      item.newStatus === GrievanceStatus.Assigned &&
+      item.remarks &&
+      item.remarks.toLowerCase().includes('reassigned')
+    ) {
+      return 'Reassigned';
+    }
+    return this.getStatusLabel(item.newStatus);
   }
 }

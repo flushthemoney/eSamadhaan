@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
@@ -39,7 +39,8 @@ export class ReportsFeedbackComponent implements OnInit {
 
   constructor(
     private reportService: ReportService,
-    private departmentService: DepartmentService
+    private departmentService: DepartmentService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -64,11 +65,17 @@ export class ReportsFeedbackComponent implements OnInit {
     this.isLoading = true;
     this.reportService.getFeedbackAnalytics(this.selectedDepartmentId || undefined).subscribe({
       next: (data) => {
-        this.feedbackData = data;
-        this.isLoading = false;
+        setTimeout(() => {
+          this.feedbackData = data;
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
       error: () => {
-        this.isLoading = false;
+        setTimeout(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }, 0);
       },
     });
   }
