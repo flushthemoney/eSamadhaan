@@ -80,25 +80,4 @@ public class UserController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>
-    /// Get user count by role (reporting)
-    /// </summary>
-    [HttpGet("stats/by-role")]
-    public async Task<ActionResult<Dictionary<string, int>>> GetUserCountByRole()
-    {
-        _logger.LogInformation("Retrieving user count by role");
-        var stats = await _userService.GetUserCountByRoleAsync();
-        return Ok(stats);
-    }
-
-    /// <summary>
-    /// Get officer count by department (reporting)
-    /// </summary>
-    [HttpGet("stats/by-department")]
-    public async Task<ActionResult<Dictionary<int, int>>> GetOfficerCountByDepartment()
-    {
-        _logger.LogInformation("Retrieving officer count by department");
-        var stats = await _userService.GetOfficerCountByDepartmentAsync();
-        return Ok(stats);
-    }
 }

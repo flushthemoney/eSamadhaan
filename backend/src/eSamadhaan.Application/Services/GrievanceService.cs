@@ -99,17 +99,6 @@ public class GrievanceService : IGrievanceService
         return MapToResponseDto(grievance);
     }
 
-    public async Task<object> GetGrievanceByNumberAsync(string grievanceNumber)
-    {
-        var grievance = await _grievanceRepository.GetByGrievanceNumberAsync(grievanceNumber);
-        if (grievance == null)
-        {
-            throw new NotFoundException($"Grievance with number '{grievanceNumber}' was not found.");
-        }
-
-        return MapToResponseDto(grievance);
-    }
-
     public async Task<IEnumerable<object>> GetAllGrievancesAsync()
     {
         var grievances = await _grievanceRepository.GetAllAsync();
@@ -126,24 +115,6 @@ public class GrievanceService : IGrievanceService
             grievances = grievances.Where(g => g.CurrentStatus == status.Value).ToList();
         }
         
-        return grievances.Select(MapToResponseDto);
-    }
-
-    public async Task<IEnumerable<object>> GetGrievancesByDepartmentAsync(int departmentId)
-    {
-        var grievances = await _grievanceRepository.GetByDepartmentIdAsync(departmentId);
-        return grievances.Select(MapToResponseDto);
-    }
-
-    public async Task<IEnumerable<object>> GetGrievancesByCategoryAsync(int categoryId)
-    {
-        var grievances = await _grievanceRepository.GetByCategoryIdAsync(categoryId);
-        return grievances.Select(MapToResponseDto);
-    }
-
-    public async Task<IEnumerable<object>> GetGrievancesByStatusAsync(GrievanceStatus status)
-    {
-        var grievances = await _grievanceRepository.GetByStatusAsync(status);
         return grievances.Select(MapToResponseDto);
     }
 
@@ -290,34 +261,6 @@ public class GrievanceService : IGrievanceService
         return dto;
     }
 
-    public async Task ReopenGrievanceAsync(int grievanceId, int userId, string reason)
-    {
-        var grievance = await _grievanceRepository.GetByIdAsync(grievanceId);
-        if (grievance == null)
-        {
-            throw new NotFoundException("Grievance", grievanceId);
-        }
-
-        // Can only reopen Closed grievances
-        if (grievance.CurrentStatus != GrievanceStatus.Closed)
-        {
-            throw new BusinessRuleViolationException($"Only Closed grievances can be reopened. Current status: {grievance.CurrentStatus}");
-        }
-
-        if (string.IsNullOrWhiteSpace(reason))
-        {
-            throw new ValidationException("Reason for reopening is required.");
-        }
-
-        var oldStatus = grievance.CurrentStatus;
-        grievance.CurrentStatus = GrievanceStatus.Submitted;
-        grievance.UpdatedAt = DateTime.UtcNow;
-        await _grievanceRepository.UpdateAsync(grievance);
-
-        // Record status history
-        await RecordStatusHistoryAsync(grievanceId, oldStatus, GrievanceStatus.Submitted, userId);
-    }
-
     public async Task CloseGrievanceAsync(int grievanceId, int userId)
     {
         var grievance = await _grievanceRepository.GetByIdAsync(grievanceId);
@@ -339,50 +282,6 @@ public class GrievanceService : IGrievanceService
 
         // Record status history
         await RecordStatusHistoryAsync(grievanceId, oldStatus, GrievanceStatus.Closed, userId);
-    }
-
-    public async Task<Dictionary<GrievanceStatus, int>> GetGrievanceCountByStatusAsync()
-    {
-        var query = _grievanceRepository.GetQueryable();
-        
-        // LINQ aggregation: Group by status and count
-        var result = query
-            .GroupBy(g => g.CurrentStatus)
-            .Select(group => new { Status = group.Key, Count = group.Count() })
-            .ToDictionary(x => x.Status, x => x.Count);
-
-        // Ensure all statuses are represented
-        foreach (GrievanceStatus status in Enum.GetValues(typeof(GrievanceStatus)))
-        {
-            if (!result.ContainsKey(status))
-            {
-                result[status] = 0;
-            }
-        }
-
-        return result;
-    }
-
-    public async Task<Dictionary<int, int>> GetGrievanceCountByDepartmentAsync()
-    {
-        var query = _grievanceRepository.GetQueryable();
-        
-        // LINQ aggregation: Group by department and count
-        return query
-            .GroupBy(g => g.DepartmentId)
-            .Select(group => new { DepartmentId = group.Key, Count = group.Count() })
-            .ToDictionary(x => x.DepartmentId, x => x.Count);
-    }
-
-    public async Task<Dictionary<int, int>> GetGrievanceCountByCategoryAsync()
-    {
-        var query = _grievanceRepository.GetQueryable();
-        
-        // LINQ aggregation: Group by category and count
-        return query
-            .GroupBy(g => g.CategoryId)
-            .Select(group => new { CategoryId = group.Key, Count = group.Count() })
-            .ToDictionary(x => x.CategoryId, x => x.Count);
     }
 
     // Private helper methods
@@ -523,62 +422,6 @@ public class GrievanceService : IGrievanceService
             AssignedOfficerName = item.ActiveAssignment?.Officer?.Name,
             HasSLABreach = item.DaysSinceSubmission > 15 // SLA default 15 days
         }).ToList();
-    }
-
-    public async Task<IEnumerable<object>> GetSLABreachedGrievancesAsync(int slaDays = 15)
-    {
-        var now = DateTime.UtcNow;
-        var slaBreachDate = now.AddDays(-slaDays);
-
-        // LINQ query to find grievances with SLA breach
-        var breachedGrievances = _grievanceRepository.GetQueryable()
-            .Where(g => 
-                // Not yet resolved or closed
-                (g.CurrentStatus != GrievanceStatus.Resolved && g.CurrentStatus != GrievanceStatus.Closed) &&
-                // Created before SLA threshold
-                g.CreatedAt <= slaBreachDate)
-            .OrderBy(g => g.CreatedAt)
-            .Select(g => new
-            {
-                Grievance = g,
-                DaysSinceSubmission = (int)(now - g.CreatedAt).TotalDays,
-                DaysSinceLastUpdate = (int)(now - g.UpdatedAt).TotalDays,
-                ActiveAssignment = g.Assignments.FirstOrDefault(a => a.IsActive)
-            })
-            .ToList();
-
-        // Map to DTO with severity calculation
-        return breachedGrievances.Select(item =>
-        {
-            var breachByDays = item.DaysSinceSubmission - slaDays;
-            var severityLevel = CalculateSeverityLevel(breachByDays);
-
-            return new SLABreachDto
-            {
-                Id = item.Grievance.Id,
-                GrievanceNumber = item.Grievance.GrievanceNumber,
-                CitizenName = item.Grievance.Citizen?.Name ?? string.Empty,
-                CategoryName = item.Grievance.Category?.Name ?? string.Empty,
-                DepartmentName = item.Grievance.Department?.Name ?? string.Empty,
-                CurrentStatus = item.Grievance.CurrentStatus,
-                CreatedAt = item.Grievance.CreatedAt,
-                UpdatedAt = item.Grievance.UpdatedAt,
-                DaysSinceSubmission = item.DaysSinceSubmission,
-                DaysSinceLastUpdate = item.DaysSinceLastUpdate,
-                SLADays = slaDays,
-                BreachByDays = breachByDays,
-                AssignedOfficerName = item.ActiveAssignment?.Officer?.Name,
-                SeverityLevel = severityLevel
-            };
-        }).ToList();
-    }
-
-    private string CalculateSeverityLevel(int breachByDays)
-    {
-        if (breachByDays <= 3) return "Low";
-        if (breachByDays <= 7) return "Medium";
-        if (breachByDays <= 14) return "High";
-        return "Critical";
     }
 
     public async Task<bool> CanEscalateGrievanceAsync(int grievanceId, int citizenId)

@@ -171,29 +171,6 @@ public class GrievanceController : ControllerBase
     }
 
     /// <summary>
-    /// View grievance details by grievance number (All authenticated users)
-    /// </summary>
-    [HttpGet("number/{grievanceNumber}")]
-    public async Task<IActionResult> GetGrievanceByNumber(string grievanceNumber)
-    {
-        var grievance = await _grievanceService.GetGrievanceByNumberAsync(grievanceNumber);
-
-        // Apply authorization: Citizens can only view their own grievances
-        if (User.IsInRole("Citizen"))
-        {
-            var citizenId = GetCurrentUserId();
-            var grievanceDto = grievance as dynamic;
-            
-            if (grievanceDto?.CitizenId != citizenId)
-            {
-                return Forbid();
-            }
-        }
-
-        return Ok(grievance);
-    }
-
-    /// <summary>
     /// Get detailed grievance information for Supervisor/Admin (without department restrictions)
     /// </summary>
     [HttpGet("{id}/detail")]
@@ -232,18 +209,6 @@ public class GrievanceController : ControllerBase
         var assignments = await _assignmentService.GetActiveAssignmentsByOfficerIdAsync(officerId, status, categoryId);
 
         return Ok(assignments);
-    }
-
-    /// <summary>
-    /// Get all grievances for a department (Officers and Admins)
-    /// </summary>
-    [HttpGet("department/{departmentId}")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetGrievancesByDepartment(int departmentId)
-    {
-        var grievances = await _grievanceService.GetGrievancesByDepartmentAsync(departmentId);
-
-        return Ok(grievances);
     }
 
     /// <summary>
@@ -318,58 +283,6 @@ public class GrievanceController : ControllerBase
         await _grievanceService.CloseGrievanceAsync(grievanceId, userId);
 
         return Ok(new { message = "Grievance closed successfully" });
-    }
-
-    /// <summary>
-    /// Reopen a closed grievance (Officers and Admins)
-    /// </summary>
-    [HttpPost("{grievanceId}/reopen")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> ReopenGrievance(
-        int grievanceId,
-        [FromBody] ReopenGrievanceRequestDto request)
-    {
-        var userId = GetCurrentUserId();
-
-        await _grievanceService.ReopenGrievanceAsync(grievanceId, userId, request.Reason);
-
-        return Ok(new { message = "Grievance reopened successfully" });
-    }
-
-    /// <summary>
-    /// Get grievance count by status (Admins and Officers)
-    /// </summary>
-    [HttpGet("statistics/by-status")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetGrievanceCountByStatus()
-    {
-        var statistics = await _grievanceService.GetGrievanceCountByStatusAsync();
-
-        return Ok(statistics);
-    }
-
-    /// <summary>
-    /// Get grievance count by department (Admins and Officers)
-    /// </summary>
-    [HttpGet("statistics/by-department")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetGrievanceCountByDepartment()
-    {
-        var statistics = await _grievanceService.GetGrievanceCountByDepartmentAsync();
-
-        return Ok(statistics);
-    }
-
-    /// <summary>
-    /// Get grievance count by category (Admins and Officers)
-    /// </summary>
-    [HttpGet("statistics/by-category")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetGrievanceCountByCategory()
-    {
-        var statistics = await _grievanceService.GetGrievanceCountByCategoryAsync();
-
-        return Ok(statistics);
     }
 
     // ========================================
@@ -536,18 +449,6 @@ public class GrievanceController : ControllerBase
     }
 
     /// <summary>
-    /// Get detailed list of grievances by status
-    /// </summary>
-    [HttpGet("reports/status/{status}")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetGrievancesByStatusDetailed(GrievanceStatus status)
-    {
-        var grievances = await _reportService.GetGrievancesByStatusDetailedAsync(status);
-
-        return Ok(grievances);
-    }
-
-    /// <summary>
     /// Get department performance report
     /// </summary>
     [HttpGet("reports/department/{departmentId}/performance")]
@@ -557,42 +458,6 @@ public class GrievanceController : ControllerBase
         var report = await _reportService.GetDepartmentPerformanceReportAsync(departmentId);
 
         return Ok(report);
-    }
-
-    /// <summary>
-    /// Get performance reports for all departments
-    /// </summary>
-    [HttpGet("reports/departments/performance")]
-    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetAllDepartmentPerformanceReports()
-    {
-        var reports = await _reportService.GetAllDepartmentPerformanceReportsAsync();
-
-        return Ok(reports);
-    }
-
-    /// <summary>
-    /// Get category summary report
-    /// </summary>
-    [HttpGet("reports/category/{categoryId}/summary")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetCategorySummaryReport(int categoryId)
-    {
-        var report = await _reportService.GetCategorySummaryReportAsync(categoryId);
-
-        return Ok(report);
-    }
-
-    /// <summary>
-    /// Get summary reports for all categories
-    /// </summary>
-    [HttpGet("reports/categories/summary")]
-    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetAllCategorySummaryReports()
-    {
-        var reports = await _reportService.GetAllCategorySummaryReportsAsync();
-
-        return Ok(reports);
     }
 
     /// <summary>
@@ -632,18 +497,6 @@ public class GrievanceController : ControllerBase
     }
 
     /// <summary>
-    /// Get officer performance report
-    /// </summary>
-    [HttpGet("reports/officer/{officerId}/performance")]
-    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetOfficerPerformanceReport(int officerId)
-    {
-        var report = await _reportService.GetOfficerPerformanceReportAsync(officerId);
-
-        return Ok(report);
-    }
-
-    /// <summary>
     /// Get top performing officers
     /// </summary>
     [HttpGet("reports/officers/top-performers")]
@@ -651,35 +504,6 @@ public class GrievanceController : ControllerBase
     public async Task<IActionResult> GetTopPerformingOfficers([FromQuery] int topCount = 10, [FromQuery] int? departmentId = null)
     {
         var report = await _reportService.GetTopPerformingOfficersAsync(topCount, departmentId);
-
-        return Ok(report);
-    }
-
-    /// <summary>
-    /// Get grievance trend report (daily, weekly, or monthly)
-    /// </summary>
-    [HttpGet("reports/trends")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetGrievanceTrendReport(
-        [FromQuery] DateTime startDate,
-        [FromQuery] DateTime endDate,
-        [FromQuery] string groupBy = "day")
-    {
-        var report = await _reportService.GetGrievanceTrendReportAsync(startDate, endDate, groupBy);
-
-        return Ok(report);
-    }
-
-    /// <summary>
-    /// Get monthly grievance report
-    /// </summary>
-    [HttpGet("reports/monthly")]
-    [Authorize(Roles = "DepartmentOfficer,SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetMonthlyGrievanceReport(
-        [FromQuery] int year,
-        [FromQuery] int month)
-    {
-        var report = await _reportService.GetMonthlyGrievanceReportAsync(year, month);
 
         return Ok(report);
     }
@@ -722,18 +546,6 @@ public class GrievanceController : ControllerBase
         var escalatedGrievances = await _grievanceService.GetEscalatedGrievancesAsync(7);
 
         return Ok(escalatedGrievances);
-    }
-
-    /// <summary>
-    /// Get grievances with SLA breaches
-    /// </summary>
-    [HttpGet("sla-breaches")]
-    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetSLABreachedGrievances([FromQuery] int slaDays = 15)
-    {
-        var slaBreach = await _grievanceService.GetSLABreachedGrievancesAsync(slaDays);
-
-        return Ok(slaBreach);
     }
 
     /// <summary>

@@ -58,29 +58,6 @@ public class ReportService : IReportService
         };
     }
 
-    public async Task<IEnumerable<object>> GetGrievancesByStatusDetailedAsync(GrievanceStatus status)
-    {
-        var query = _grievanceRepository.GetQueryable();
-        
-        // LINQ query: Filter by status and project detailed information
-        return query
-            .Where(g => g.CurrentStatus == status)
-            .Select(g => new
-            {
-                g.Id,
-                g.GrievanceNumber,
-                CitizenName = g.Citizen.Name,
-                DepartmentName = g.Department.Name,
-                CategoryName = g.Category.Name,
-                g.CurrentStatus,
-                g.CreatedAt,
-                g.UpdatedAt,
-                DaysSinceCreation = (DateTime.UtcNow - g.CreatedAt).Days
-            })
-            .OrderByDescending(x => x.CreatedAt)
-            .ToList();
-    }
-
     public async Task<object> GetDepartmentPerformanceReportAsync(int departmentId)
     {
         // Validate department exists
@@ -154,74 +131,6 @@ public class ReportService : IReportService
             AverageResolutionTimeHours = Math.Round(avgResolutionTime, 2),
             AverageRating = Math.Round(avgRating, 2)
         };
-    }
-
-    public async Task<IEnumerable<object>> GetAllDepartmentPerformanceReportsAsync()
-    {
-        var departments = await _departmentRepository.GetAllAsync();
-        var reports = new List<object>();
-
-        foreach (var dept in departments)
-        {
-            var report = await GetDepartmentPerformanceReportAsync(dept.Id);
-            reports.Add(report);
-        }
-
-        return reports;
-    }
-
-    public async Task<object> GetCategorySummaryReportAsync(int categoryId)
-    {
-        // Validate category exists
-        if (!await _categoryRepository.ExistsAsync(categoryId))
-        {
-            throw new NotFoundException("Category", categoryId);
-        }
-
-        var query = _grievanceRepository.GetQueryable();
-
-        // LINQ aggregations: Calculate category metrics
-        var totalGrievances = query.Count(g => g.CategoryId == categoryId);
-        
-        var statusBreakdown = query
-            .Where(g => g.CategoryId == categoryId)
-            .GroupBy(g => g.CurrentStatus)
-            .Select(group => new { Status = group.Key, Count = group.Count() })
-            .ToDictionary(x => x.Status, x => x.Count);
-
-        var departmentBreakdown = query
-            .Where(g => g.CategoryId == categoryId)
-            .GroupBy(g => g.DepartmentId)
-            .Select(group => new 
-            { 
-                DepartmentId = group.Key,
-                DepartmentName = group.First().Department.Name,
-                Count = group.Count() 
-            })
-            .OrderByDescending(x => x.Count)
-            .ToList();
-
-        return new
-        {
-            CategoryId = categoryId,
-            TotalGrievances = totalGrievances,
-            StatusBreakdown = statusBreakdown,
-            DepartmentBreakdown = departmentBreakdown
-        };
-    }
-
-    public async Task<IEnumerable<object>> GetAllCategorySummaryReportsAsync()
-    {
-        var categories = await _categoryRepository.GetAllAsync();
-        var reports = new List<object>();
-
-        foreach (var category in categories)
-        {
-            var report = await GetCategorySummaryReportAsync(category.Id);
-            reports.Add(report);
-        }
-
-        return reports;
     }
 
     public async Task<object> GetResolutionTimeReportAsync()
@@ -358,41 +267,6 @@ public class ReportService : IReportService
         };
     }
 
-    public async Task<object> GetOfficerPerformanceReportAsync(int officerId)
-    {
-        // Validate officer exists
-        var officer = await _userRepository.GetByIdAsync(officerId);
-        if (officer == null)
-        {
-            throw new NotFoundException("Officer", officerId);
-        }
-
-        var resolutionQuery = _resolutionRepository.GetQueryable();
-        var assignmentQuery = _assignmentRepository.GetQueryable();
-
-        // LINQ aggregations: Calculate officer performance metrics
-        var totalResolutions = resolutionQuery.Count(r => r.ResolvedByOfficerId == officerId);
-        var activeAssignments = assignmentQuery.Count(a => a.OfficerId == officerId && a.IsActive);
-
-        var avgResolutionTime = resolutionQuery
-            .Where(r => r.ResolvedByOfficerId == officerId)
-            .Join(_grievanceRepository.GetQueryable(),
-                resolution => resolution.GrievanceId,
-                grievance => grievance.Id,
-                (resolution, grievance) => (resolution.ResolvedAt - grievance.CreatedAt).TotalHours)
-            .DefaultIfEmpty(0)
-            .Average();
-
-        return new
-        {
-            OfficerId = officerId,
-            OfficerName = officer.Name,
-            TotalResolutions = totalResolutions,
-            ActiveAssignments = activeAssignments,
-            AverageResolutionTimeHours = Math.Round(avgResolutionTime, 2)
-        };
-    }
-
     public async Task<IEnumerable<object>> GetTopPerformingOfficersAsync(int topCount, int? departmentId = null)
     {
         var assignmentQuery = _assignmentRepository.GetQueryable();
@@ -482,115 +356,6 @@ public class ReportService : IReportService
             .ThenBy(x => ((dynamic)x).averageResolutionTimeInDays)
             .Take(topCount)
             .ToList();
-    }
-
-    public async Task<IEnumerable<object>> GetGrievanceTrendReportAsync(DateTime startDate, DateTime endDate, string groupBy)
-    {
-        var query = _grievanceRepository.GetQueryable();
-
-        // Filter by date range
-        var filteredQuery = query.Where(g => g.CreatedAt >= startDate && g.CreatedAt <= endDate);
-
-        // LINQ grouping: Group by time period
-        switch (groupBy.ToLower())
-        {
-            case "day":
-                return filteredQuery
-                    .GroupBy(g => g.CreatedAt.Date)
-                    .Select(group => new
-                    {
-                        Date = group.Key,
-                        Count = group.Count()
-                    })
-                    .OrderBy(x => x.Date)
-                    .ToList();
-
-            case "week":
-                return filteredQuery
-                    .GroupBy(g => new 
-                    { 
-                        Year = g.CreatedAt.Year,
-                        Week = (g.CreatedAt.DayOfYear - 1) / 7 + 1 
-                    })
-                    .Select(group => new
-                    {
-                        Year = group.Key.Year,
-                        Week = group.Key.Week,
-                        Count = group.Count()
-                    })
-                    .OrderBy(x => x.Year).ThenBy(x => x.Week)
-                    .ToList();
-
-            case "month":
-                return filteredQuery
-                    .GroupBy(g => new { g.CreatedAt.Year, g.CreatedAt.Month })
-                    .Select(group => new
-                    {
-                        Year = group.Key.Year,
-                        Month = group.Key.Month,
-                        Count = group.Count()
-                    })
-                    .OrderBy(x => x.Year).ThenBy(x => x.Month)
-                    .ToList();
-
-            default:
-                throw new ValidationException("Invalid groupBy parameter. Valid values: day, week, month");
-        }
-    }
-
-    public async Task<object> GetMonthlyGrievanceReportAsync(int year, int month)
-    {
-        // Validate month
-        if (month < 1 || month > 12)
-        {
-            throw new ValidationException("Month must be between 1 and 12.");
-        }
-
-        var query = _grievanceRepository.GetQueryable();
-        
-        // LINQ filtering and aggregation: Monthly statistics
-        var monthlyGrievances = query
-            .Where(g => g.CreatedAt.Year == year && g.CreatedAt.Month == month)
-            .ToList();
-
-        var totalCount = monthlyGrievances.Count;
-        
-        var statusBreakdown = monthlyGrievances
-            .GroupBy(g => g.CurrentStatus)
-            .Select(group => new { Status = group.Key, Count = group.Count() })
-            .ToDictionary(x => x.Status, x => x.Count);
-
-        var departmentBreakdown = monthlyGrievances
-            .GroupBy(g => g.DepartmentId)
-            .Select(group => new 
-            { 
-                DepartmentId = group.Key,
-                DepartmentName = group.First().Department?.Name ?? "Unknown",
-                Count = group.Count() 
-            })
-            .OrderByDescending(x => x.Count)
-            .ToList();
-
-        var categoryBreakdown = monthlyGrievances
-            .GroupBy(g => g.CategoryId)
-            .Select(group => new 
-            { 
-                CategoryId = group.Key,
-                CategoryName = group.First().Category?.Name ?? "Unknown",
-                Count = group.Count() 
-            })
-            .OrderByDescending(x => x.Count)
-            .ToList();
-
-        return new
-        {
-            Year = year,
-            Month = month,
-            TotalGrievances = totalCount,
-            StatusBreakdown = statusBreakdown,
-            DepartmentBreakdown = departmentBreakdown,
-            CategoryBreakdown = categoryBreakdown
-        };
     }
 
     public async Task<object> GetFeedbackAnalyticsReportAsync()

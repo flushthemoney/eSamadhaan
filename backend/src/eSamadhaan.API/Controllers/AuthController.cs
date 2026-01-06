@@ -142,25 +142,4 @@ public class AuthController : ControllerBase
         });
     }
 
-    /// <summary>
-    /// Validate token (for testing/debugging)
-    /// </summary>
-    [HttpGet("validate")]
-    [Authorize]
-    public IActionResult ValidateToken()
-    {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
-                     User.FindFirst("sub")?.Value;
-        var email = User.FindFirst(ClaimTypes.Email)?.Value;
-        var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
-        return Ok(new
-        {
-            valid = true,
-            userId = userId,
-            email = email,
-            role = role,
-            message = "Token is valid"
-        });
-    }
 }

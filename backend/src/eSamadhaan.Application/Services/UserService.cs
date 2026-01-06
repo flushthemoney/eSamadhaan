@@ -268,42 +268,6 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
     }
 
-    public async Task<Dictionary<string, int>> GetUserCountByRoleAsync()
-    {
-        var users = await _userRepository.GetAllAsync();
-        
-        // LINQ aggregation: Count users grouped by role
-        var result = users
-            .GroupBy(u => u.Role)
-            .Select(group => new { Role = group.Key, Count = group.Count() })
-            .ToDictionary(x => x.Role, x => x.Count);
-
-        // Ensure all roles are represented
-        var validRoles = new[] { "SystemAdmin", "DepartmentOfficer", "SupervisoryOfficer", "Citizen" };
-        foreach (var role in validRoles)
-        {
-            if (!result.ContainsKey(role))
-            {
-                result[role] = 0;
-            }
-        }
-
-        return result;
-    }
-
-    public async Task<Dictionary<int, int>> GetOfficerCountByDepartmentAsync()
-    {
-        var users = await _userRepository.GetAllAsync();
-        
-        // LINQ aggregation: Count DepartmentOfficers grouped by department
-        // Note: SupervisoryOfficers are independent and not tied to specific departments
-        return users
-            .Where(u => u.Role == "DepartmentOfficer" && u.DepartmentId.HasValue)
-            .GroupBy(u => u.DepartmentId!.Value)
-            .Select(group => new { DepartmentId = group.Key, Count = group.Count() })
-            .ToDictionary(x => x.DepartmentId, x => x.Count);
-    }
-
     // Private helper methods
     private UserDto MapToDto(Domain.Entities.User user)
     {

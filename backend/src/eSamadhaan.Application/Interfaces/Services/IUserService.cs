@@ -14,6 +14,4 @@ public interface IUserService
     Task<UserDto> CreateUserAsync(CreateUserRequestDto request);
     Task UpdateUserAsync(int id, string name, string email, string? role, int? departmentId);
     Task UpdateUserStatusAsync(int id, bool isActive);
-    Task<Dictionary<string, int>> GetUserCountByRoleAsync();
-    Task<Dictionary<int, int>> GetOfficerCountByDepartmentAsync();
 }
