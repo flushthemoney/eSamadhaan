@@ -64,8 +64,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       next: (data) => {
         // Defer state changes to avoid change detection errors
         setTimeout(() => {
-          this.grievances = data;
-          this.dataSource.data = data;
+          // Sort by createdAt ascending (oldest first)
+          const sortedData = data.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateA - dateB; // Ascending order (oldest first)
+          });
+          this.grievances = sortedData;
+          this.dataSource.data = sortedData;
           this.isLoading = false;
           this.cdr.markForCheck();
           // Connect paginator after view updates

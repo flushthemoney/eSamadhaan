@@ -88,6 +88,28 @@
   } @else if (!showForm) {
     <mat-card>
       <mat-card-content>
+        <div class="filters" style="margin-bottom: 1rem;">
+          <mat-form-field appearance="outline" style="width: 200px; margin-right: 1rem;">
+            <mat-label>Filter by Role</mat-label>
+            <mat-select [(ngModel)]="selectedRole" (selectionChange)="onFilterChange()">
+              <mat-option [value]="null">All Roles</mat-option>
+              @for (role of roles; track role.value) {
+                <mat-option [value]="role.value">{{ role.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" style="width: 200px;" *ngIf="selectedRole === 'DepartmentOfficer'">
+            <mat-label>Filter by Department</mat-label>
+            <mat-select [(ngModel)]="selectedDepartmentId" (selectionChange)="onFilterChange()">
+              <mat-option [value]="null">All Departments</mat-option>
+              @for (dept of departments; track dept.id) {
+                <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
         <table mat-table [dataSource]="dataSource" class="user-table">
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>

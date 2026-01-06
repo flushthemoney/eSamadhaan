@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -32,6 +32,7 @@ import { CustomValidators } from '../../../../core/validators/custom.validators'
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatCardModule,
     MatTableModule,
     MatPaginatorModule,
@@ -54,8 +55,11 @@ import { CustomValidators } from '../../../../core/validators/custom.validators'
 export class UserManagementComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['name', 'email', 'role', 'departmentName', 'isActive', 'actions'];
   users: UserDto[] = [];
+  allUsers: UserDto[] = [];
   dataSource = new MatTableDataSource<UserDto>([]);
   departments: DepartmentDto[] = [];
+  selectedRole: string | null = null;
+  selectedDepartmentId: number | null = null;
   isLoading = false;
   isSubmitting = false;
   showForm = false;
@@ -111,6 +115,7 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
     this.userService.getAllUsers().subscribe({
       next: (data) => {
         setTimeout(() => {
+          this.allUsers = data;
           this.users = data;
           this.dataSource.data = this.users;
           this.isLoading = false;
@@ -126,6 +131,33 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
         }, 0);
       },
     });
+  }
+
+  onFilterChange(): void {
+    // Reset department filter if role is not DepartmentOfficer
+    if (this.selectedRole !== 'DepartmentOfficer') {
+      this.selectedDepartmentId = null;
+    }
+
+    let filtered = [...this.allUsers];
+
+    // Filter by role
+    if (this.selectedRole) {
+      filtered = filtered.filter(user => user.role === this.selectedRole);
+    }
+
+    // Filter by department if role is DepartmentOfficer and department is selected
+    if (this.selectedRole === 'DepartmentOfficer' && this.selectedDepartmentId) {
+      filtered = filtered.filter(user => user.departmentId === this.selectedDepartmentId);
+    }
+
+    this.users = filtered;
+    this.dataSource.data = this.users;
+    
+    if (this.paginator) {
+      this.paginator.pageIndex = 0;
+    }
+    this.cdr.detectChanges();
   }
   
   ngAfterViewInit(): void {

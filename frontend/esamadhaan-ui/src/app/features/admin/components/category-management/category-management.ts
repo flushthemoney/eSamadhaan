@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
@@ -28,6 +28,7 @@ import { DepartmentDto } from '../../../../models/department';
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatCardModule,
     MatTableModule,
     MatPaginatorModule,
@@ -48,8 +49,10 @@ import { DepartmentDto } from '../../../../models/department';
 export class CategoryManagementComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['name', 'description', 'departmentName', 'actions'];
   categories: CategoryDto[] = [];
+  allCategories: CategoryDto[] = [];
   dataSource = new MatTableDataSource<CategoryDto>([]);
   departments: DepartmentDto[] = [];
+  selectedDepartmentId: number | null = null;
   isLoading = false;
   isSubmitting = false;
   showForm = false;
@@ -83,6 +86,7 @@ export class CategoryManagementComponent implements OnInit, AfterViewInit {
     this.categoryService.getAllCategories().subscribe({
       next: (data: CategoryDto[]) => {
         setTimeout(() => {
+          this.allCategories = data;
           this.categories = data;
           this.dataSource.data = this.categories;
           this.isLoading = false;
@@ -98,6 +102,20 @@ export class CategoryManagementComponent implements OnInit, AfterViewInit {
         }, 0);
       },
     });
+  }
+
+  onFilterChange(): void {
+    if (this.selectedDepartmentId) {
+      this.categories = this.allCategories.filter(cat => cat.departmentId === this.selectedDepartmentId);
+    } else {
+      this.categories = [...this.allCategories];
+    }
+    this.dataSource.data = this.categories;
+    
+    if (this.paginator) {
+      this.paginator.pageIndex = 0;
+    }
+    this.cdr.detectChanges();
   }
   
   ngAfterViewInit(): void {

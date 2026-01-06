@@ -1,6 +1,13 @@
 // Table styling is handled globally in styles.scss
 // Component-specific styles below
 
+.department-table {
+  .mat-column-actions {
+    min-width: 120px;
+    width: 120px;
+  }
+}
+
 .full-width {
   width: 100%;
   margin-bottom: 1rem;
