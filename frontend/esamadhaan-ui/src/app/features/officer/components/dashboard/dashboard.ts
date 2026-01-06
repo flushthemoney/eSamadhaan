@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -6,8 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatListModule } from '@angular/material/list';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 
 import { GrievanceService } from '../../../../services/grievance.service';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner';
@@ -27,8 +27,8 @@ import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
     MatGridListModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatListModule,
-    MatDividerModule,
+    MatTableModule,
+    MatPaginatorModule,
     LoadingSpinnerComponent,
     EmptyStateComponent,
     PageHeaderComponent,
@@ -38,9 +38,14 @@ import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, AfterViewInit {
+  displayedColumns: string[] = ['grievanceNumber', 'status', 'createdAt', 'actions'];
   dashboardData: any = null;
+  dataSource = new MatTableDataSource<any>([]);
   isLoading = false;
+  resolutionRate: number = 0;
+  
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(private grievanceService: GrievanceService, private cdr: ChangeDetectorRef) {}
 
@@ -54,30 +59,60 @@ export class DashboardComponent implements OnInit {
       next: (data) => {
         setTimeout(() => {
           this.dashboardData = data;
+          if (data.recentGrievances) {
+            this.dataSource.data = data.recentGrievances;
+          }
+          this.updateResolutionRate();
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
+          // Connect paginator after view updates
+          this.connectPaginatorWithRetry();
         }, 0);
       },
       error: () => {
         setTimeout(() => {
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
     });
   }
 
-  getResolutionRate(): number {
+  private updateResolutionRate(): void {
     if (
       !this.dashboardData ||
       !this.dashboardData.totalGrievances ||
       this.dashboardData.totalGrievances === 0
     ) {
-      return 0;
+      this.resolutionRate = 0;
+      return;
     }
     const resolved = this.dashboardData.resolvedCount || 0;
-    return Math.round((resolved / this.dashboardData.totalGrievances) * 100);
+    this.resolutionRate = Math.round((resolved / this.dashboardData.totalGrievances) * 100);
   }
+  
+  ngAfterViewInit(): void {
+    // Try to connect paginator when view is initialized
+    this.connectPaginatorWithRetry();
+  }
+
+  private connectPaginatorWithRetry(attempts = 0): void {
+    const maxAttempts = 10;
+    if (attempts >= maxAttempts) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (this.paginator && this.dataSource) {
+        this.dataSource.paginator = this.paginator;
+        this.cdr.markForCheck();
+      } else if (attempts < maxAttempts) {
+        // Retry if paginator not available yet (might be conditionally rendered)
+        this.connectPaginatorWithRetry(attempts + 1);
+      }
+    }, 50);
+  }
+
 
   formatDate(dateString: string): Date {
     // Ensure proper UTC parsing - backend sends dates in UTC

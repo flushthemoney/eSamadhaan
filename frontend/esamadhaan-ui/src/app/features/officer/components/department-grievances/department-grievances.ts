@@ -1,9 +1,9 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
@@ -46,20 +46,20 @@ import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
   templateUrl: './department-grievances.html',
   styleUrl: './department-grievances.scss',
 })
-export class DepartmentGrievancesComponent implements OnInit {
+export class DepartmentGrievancesComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['grievanceNumber', 'categoryName', 'status', 'createdAt', 'actions'];
   grievances: any[] = [];
-  filteredGrievances: any[] = [];
+  dataSource = new MatTableDataSource<any>([]);
   categories: CategoryDto[] = [];
   isLoading = false;
   isLoadingCategories = false;
   selectedStatus: number | null = null;
   selectedCategoryId: number | null = null;
   selectedSortBy: string = '';
-  pageSize = 25;
-  pageIndex = 0;
   GrievanceStatus = GrievanceStatus;
   departmentId: number | null = null;
+  
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private grievanceService: GrievanceService,
@@ -108,9 +108,11 @@ export class DepartmentGrievancesComponent implements OnInit {
       next: (data) => {
         setTimeout(() => {
           this.grievances = data;
-          this.applyPagination();
+          this.dataSource.data = this.grievances;
           this.isLoading = false;
           this.cdr.detectChanges();
+          // Connect paginator after view updates
+          this.connectPaginatorWithRetry();
         }, 0);
       },
       error: () => {
@@ -121,21 +123,30 @@ export class DepartmentGrievancesComponent implements OnInit {
       },
     });
   }
+  
+  ngAfterViewInit(): void {
+    // Try to connect paginator when view is initialized
+    this.connectPaginatorWithRetry();
+  }
+
+  private connectPaginatorWithRetry(attempts = 0): void {
+    const maxAttempts = 10;
+    if (attempts >= maxAttempts) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (this.paginator && this.dataSource) {
+        this.dataSource.paginator = this.paginator;
+        this.cdr.detectChanges();
+      } else if (attempts < maxAttempts) {
+        // Retry if paginator not available yet (might be conditionally rendered)
+        this.connectPaginatorWithRetry(attempts + 1);
+      }
+    }, 50);
+  }
 
   onFilterChange(): void {
-    this.pageIndex = 0;
     this.loadGrievances();
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.applyPagination();
-  }
-
-  private applyPagination(): void {
-    const start = this.pageIndex * this.pageSize;
-    const end = start + this.pageSize;
-    this.filteredGrievances = this.grievances.slice(start, end);
   }
 }

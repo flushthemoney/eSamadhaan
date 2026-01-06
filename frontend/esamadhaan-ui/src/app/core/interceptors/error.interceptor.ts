@@ -23,8 +23,8 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
         // Forbidden - insufficient permissions
         router.navigate(["/unauthorized"]);
       } else if (error.status === 404) {
-        // Not found - skip notification for resolution endpoint (resolution may not exist yet)
-        if (!req.url.includes('/resolution')) {
+        // Not found - skip notification for resolution and feedback endpoints (may not exist yet)
+        if (!req.url.includes('/resolution') && !req.url.includes('/feedback')) {
           notificationService.showError("Resource not found");
         }
       } else if (error.status === 0) {

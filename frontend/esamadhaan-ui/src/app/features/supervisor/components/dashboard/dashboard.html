@@ -4,7 +4,7 @@
 @if (isLoading) {
   <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
 } @else if (dashboardData) {
-  <mat-grid-list cols="4" rowHeight="150px" gutterSize="16px">
+  <mat-grid-list cols="4" rowHeight="150px" gutterSize="24px">
     <mat-grid-tile>
       <mat-card class="stat-card">
         <mat-card-content>
@@ -42,7 +42,35 @@
     </mat-grid-tile>
   </mat-grid-list>
 
-  <mat-grid-list cols="2" rowHeight="400px" gutterSize="16px" style="margin-top: 24px;">
+  <mat-grid-list cols="2" rowHeight="350px" gutterSize="24px" class="dashboard-grid-section">
+    <mat-grid-tile>
+      <mat-card class="recent-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>history</mat-icon>
+            Recent Grievances
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="recent-list">
+            @if (dashboardData.recentGrievances && dashboardData.recentGrievances.length > 0) {
+              @for (grievance of dashboardData.recentGrievances.slice(0, 5); track grievance.id) {
+                <div class="recent-item">
+                  <div class="recent-info">
+                    <div class="recent-number">{{ grievance.grievanceNumber }}</div>
+                    <div class="recent-date">{{ formatDate(grievance.createdAt) | date:'short' }}</div>
+                  </div>
+                  <app-grievance-status-badge [status]="getStatusFromString(grievance.status)"></app-grievance-status-badge>
+                </div>
+              }
+            } @else {
+              <div class="empty-state">No recent grievances</div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
     <mat-grid-tile>
       <mat-card class="distribution-card">
         <mat-card-header>
@@ -77,7 +105,9 @@
         </mat-card-content>
       </mat-card>
     </mat-grid-tile>
+  </mat-grid-list>
 
+  <mat-grid-list cols="2" rowHeight="400px" gutterSize="24px" class="dashboard-grid-section">
     <mat-grid-tile>
       <mat-card class="health-card">
         <mat-card-header>
@@ -99,43 +129,6 @@
                 {{ (dashboardData.submittedGrievances || 0) + (dashboardData.assignedGrievances || 0) + (dashboardData.inReviewGrievances || 0) }}
               </div>
             </div>
-            <div class="metric-divider"></div>
-            <div class="metric-item">
-              <div class="metric-label">Total Resolved</div>
-              <div class="metric-value">
-                {{ (dashboardData.resolvedGrievances || 0) + (dashboardData.closedGrievances || 0) }}
-              </div>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </mat-grid-tile>
-  </mat-grid-list>
-
-  <mat-grid-list cols="2" rowHeight="350px" gutterSize="16px" style="margin-top: 24px;">
-    <mat-grid-tile>
-      <mat-card class="recent-card">
-        <mat-card-header>
-          <mat-card-title>
-            <mat-icon>history</mat-icon>
-            Recent Grievances
-          </mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="recent-list">
-            @if (dashboardData.recentGrievances && dashboardData.recentGrievances.length > 0) {
-              @for (grievance of dashboardData.recentGrievances.slice(0, 5); track grievance.id) {
-                <div class="recent-item">
-                  <div class="recent-info">
-                    <div class="recent-number">{{ grievance.grievanceNumber }}</div>
-                    <div class="recent-date">{{ formatDate(grievance.createdAt) | date:'short' }}</div>
-                  </div>
-                  <app-grievance-status-badge [status]="getStatusFromString(grievance.status)"></app-grievance-status-badge>
-                </div>
-              }
-            } @else {
-              <div class="empty-state">No recent grievances</div>
-            }
           </div>
         </mat-card-content>
       </mat-card>

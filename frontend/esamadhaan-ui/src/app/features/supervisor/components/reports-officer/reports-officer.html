@@ -27,7 +27,7 @@
 } @else {
   <mat-card>
     <mat-card-content>
-      <table mat-table [dataSource]="officerPerformance" class="report-table">
+      <table mat-table [dataSource]="dataSource" class="report-table">
         <ng-container matColumnDef="officerName">
           <th mat-header-cell *matHeaderCellDef>Officer Name</th>
           <td mat-cell *matCellDef="let officer">{{ officer.officerName }}</td>

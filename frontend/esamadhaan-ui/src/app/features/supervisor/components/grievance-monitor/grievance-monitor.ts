@@ -1,10 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,18 +55,18 @@ import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
   templateUrl: './grievance-monitor.html',
   styleUrl: './grievance-monitor.scss',
 })
-export class GrievanceMonitorComponent implements OnInit {
+export class GrievanceMonitorComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['grievanceNumber', 'departmentName', 'categoryName', 'status', 'createdAt'];
   grievances: any[] = [];
-  filteredGrievances: any[] = [];
+  dataSource = new MatTableDataSource<any>([]);
   departments: DepartmentDto[] = [];
   categories: CategoryDto[] = [];
   isLoading = false;
   isSearching = false;
   searchForm: FormGroup;
-  pageSize = 25;
-  pageIndex = 0;
   GrievanceStatus = GrievanceStatus;
+  
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private grievanceService: GrievanceService,
@@ -109,15 +109,12 @@ export class GrievanceMonitorComponent implements OnInit {
       next: (data) => {
         // Defer state changes to avoid change detection errors
         setTimeout(() => {
-          // Sort by newest first (reverse chronological order)
-          this.grievances = data.sort((a, b) => {
-            const dateA = new Date(a.createdAt).getTime();
-            const dateB = new Date(b.createdAt).getTime();
-            return dateB - dateA; // Newest first
-          });
-          this.applyPagination();
+          this.grievances = data;
+          this.dataSource.data = this.grievances;
           this.isLoading = false;
           this.cdr.markForCheck();
+          // Connect paginator after view updates
+          this.connectPaginatorWithRetry();
         }, 0);
       },
       error: () => {
@@ -128,6 +125,28 @@ export class GrievanceMonitorComponent implements OnInit {
         }, 0);
       },
     });
+  }
+  
+  ngAfterViewInit(): void {
+    // Try to connect paginator when view is initialized
+    this.connectPaginatorWithRetry();
+  }
+
+  private connectPaginatorWithRetry(attempts = 0): void {
+    const maxAttempts = 10;
+    if (attempts >= maxAttempts) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (this.paginator && this.dataSource) {
+        this.dataSource.paginator = this.paginator;
+        this.cdr.markForCheck();
+      } else if (attempts < maxAttempts) {
+        // Retry if paginator not available yet (might be conditionally rendered)
+        this.connectPaginatorWithRetry(attempts + 1);
+      }
+    }, 50);
   }
 
   loadDepartments(): void {
@@ -180,16 +199,15 @@ export class GrievanceMonitorComponent implements OnInit {
       next: (data) => {
         // Defer state changes to avoid change detection errors
         setTimeout(() => {
-          // Sort by newest first (reverse chronological order)
-          this.grievances = data.sort((a, b) => {
-            const dateA = new Date(a.createdAt).getTime();
-            const dateB = new Date(b.createdAt).getTime();
-            return dateB - dateA; // Newest first
-          });
-          this.pageIndex = 0;
-          this.applyPagination();
+          this.grievances = data;
+          this.dataSource.data = this.grievances;
           this.isSearching = false;
           this.cdr.markForCheck();
+          // Connect paginator after view updates
+          this.connectPaginatorWithRetry();
+          if (this.paginator) {
+            this.paginator.pageIndex = 0;
+          }
         }, 0);
       },
       error: () => {
@@ -202,12 +220,6 @@ export class GrievanceMonitorComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.applyPagination();
-  }
-
   onRowClick(grievance: any): void {
     // Determine route based on current URL
     const currentUrl = this.router.url;
@@ -216,11 +228,5 @@ export class GrievanceMonitorComponent implements OnInit {
     } else {
       this.router.navigate(['/supervisor/grievances', grievance.id]);
     }
-  }
-
-  private applyPagination(): void {
-    const start = this.pageIndex * this.pageSize;
-    const end = start + this.pageSize;
-    this.filteredGrievances = this.grievances.slice(start, end);
   }
 }

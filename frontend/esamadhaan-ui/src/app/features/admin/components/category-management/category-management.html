@@ -67,7 +67,7 @@
   } @else if (!showForm) {
     <mat-card>
       <mat-card-content>
-        <table mat-table [dataSource]="filteredCategories" class="category-table">
+        <table mat-table [dataSource]="dataSource" class="category-table">
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Name</th>
             <td mat-cell *matCellDef="let category">{{ category.name }}</td>
@@ -99,15 +99,10 @@
           <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
 
-        @if (categories.length > pageSize) {
-          <mat-paginator
-            [length]="categories.length"
-            [pageSize]="pageSize"
-            [pageIndex]="pageIndex"
-            [pageSizeOptions]="[10, 25, 50]"
-            (page)="onPageChange($event)"
-          ></mat-paginator>
-        }
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50]"
+          showFirstLastButtons
+        ></mat-paginator>
       </mat-card-content>
     </mat-card>
   }

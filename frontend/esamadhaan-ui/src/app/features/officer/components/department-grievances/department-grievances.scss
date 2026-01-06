@@ -1,21 +1,15 @@
-.table-container {
-  overflow-x: auto;
-  width: 100%;
-}
+// Table container and table styling is handled globally in styles.scss
+// Component-specific styles below
 
 .grievance-table {
-  width: 100%;
   min-width: 800px;
-
-  .mat-mdc-table {
-    width: 100%;
-  }
 }
 
 .filters {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
 @media (max-width: 960px) {

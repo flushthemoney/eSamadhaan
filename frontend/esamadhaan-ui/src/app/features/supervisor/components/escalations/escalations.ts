@@ -1,9 +1,9 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
@@ -36,13 +36,13 @@ import { GrievanceStatusBadgeComponent } from '../../../../shared/components/gri
   templateUrl: './escalations.html',
   styleUrl: './escalations.scss',
 })
-export class EscalationsComponent implements OnInit {
+export class EscalationsComponent implements OnInit, AfterViewInit {
   displayedColumns: string[] = ['grievanceNumber', 'departmentName', 'categoryName', 'status', 'daysSinceSubmission', 'actions'];
   escalations: any[] = [];
-  filteredEscalations: any[] = [];
+  dataSource = new MatTableDataSource<any>([]);
   isLoading = false;
-  pageSize = 25;
-  pageIndex = 0;
+  
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private grievanceService: GrievanceService,
@@ -59,9 +59,11 @@ export class EscalationsComponent implements OnInit {
       next: (data) => {
         setTimeout(() => {
           this.escalations = data;
-          this.applyPagination();
+          this.dataSource.data = this.escalations;
           this.isLoading = false;
           this.cdr.detectChanges();
+          // Connect paginator after view updates
+          this.connectPaginatorWithRetry();
         }, 0);
       },
       error: () => {
@@ -72,16 +74,26 @@ export class EscalationsComponent implements OnInit {
       },
     });
   }
-
-  onPageChange(event: PageEvent): void {
-    this.pageIndex = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.applyPagination();
+  
+  ngAfterViewInit(): void {
+    // Try to connect paginator when view is initialized
+    this.connectPaginatorWithRetry();
   }
 
-  private applyPagination(): void {
-    const start = this.pageIndex * this.pageSize;
-    const end = start + this.pageSize;
-    this.filteredEscalations = this.escalations.slice(start, end);
+  private connectPaginatorWithRetry(attempts = 0): void {
+    const maxAttempts = 10;
+    if (attempts >= maxAttempts) {
+      return;
+    }
+
+    setTimeout(() => {
+      if (this.paginator && this.dataSource) {
+        this.dataSource.paginator = this.paginator;
+        this.cdr.detectChanges();
+      } else if (attempts < maxAttempts) {
+        // Retry if paginator not available yet (might be conditionally rendered)
+        this.connectPaginatorWithRetry(attempts + 1);
+      }
+    }, 50);
   }
 }

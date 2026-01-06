@@ -4,7 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { FormsModule } from '@angular/forms';
 
 import { ReportService } from '../../../../services/report.service';
@@ -36,6 +36,7 @@ export class ReportsFeedbackComponent implements OnInit {
   isLoading = false;
   selectedDepartmentId: number | null = null;
   displayedColumns: string[] = ['rating', 'count', 'percentage'];
+  dataSource = new MatTableDataSource<any>([]);
 
   constructor(
     private reportService: ReportService,
@@ -72,6 +73,7 @@ export class ReportsFeedbackComponent implements OnInit {
         // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.feedbackData = data;
+          this.updateDataSource();
           this.isLoading = false;
           this.cdr.markForCheck();
         }, 0);
@@ -85,13 +87,21 @@ export class ReportsFeedbackComponent implements OnInit {
       },
     });
   }
-
-  getRatingDistribution(): any[] {
-    if (!this.feedbackData) return [];
-    return [1, 2, 3, 4, 5].map((rating) => ({
+  
+  private updateDataSource(): void {
+    if (!this.feedbackData) {
+      this.dataSource.data = [];
+      return;
+    }
+    const distribution = [1, 2, 3, 4, 5].map((rating) => ({
       rating,
       count: this.feedbackData.feedbackCountByRating?.[rating] || 0,
       percentage: this.feedbackData.ratingPercentages?.[rating] || 0,
     }));
+    this.dataSource.data = distribution;
+  }
+
+  getRatingDistribution(): any[] {
+    return this.dataSource.data;
   }
 }

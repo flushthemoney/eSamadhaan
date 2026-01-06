@@ -20,7 +20,7 @@ import { PageHeaderComponent } from '../../../../shared/components/page-header/p
 import { GrievanceStatusBadgeComponent } from '../../../../shared/components/grievance-status-badge/grievance-status-badge';
 import { GrievanceListDto } from '../../../../models/grievance';
 import { GrievanceStatus } from '../../../../models/common';
-import { CreateFeedbackRequest } from '../../../../models/feedback';
+import { CreateFeedbackRequest, FeedbackResponseDto } from '../../../../models/feedback';
 import { RelativeTimePipe } from '../../../../shared/pipes/relative-time-pipe';
 
 @Component({
@@ -52,6 +52,7 @@ export class FeedbackComponent implements OnInit {
   closedGrievances: GrievanceListDto[] = [];
   eligibleGrievances: GrievanceListDto[] = [];
   feedbackForms: Map<number, FormGroup> = new Map();
+  feedbackData: Map<number, FeedbackResponseDto> = new Map();
   isLoading = false;
   submittingFeedback = new Set<number>();
 
@@ -150,10 +151,11 @@ export class FeedbackComponent implements OnInit {
 
   checkExistingFeedback(grievanceId: number): void {
     this.feedbackService.getFeedback(grievanceId).subscribe({
-      next: () => {
-        // Feedback exists, mark grievance as feedback submitted
+      next: (feedback: FeedbackResponseDto) => {
+        // Feedback exists, store feedback data and mark grievance as feedback submitted
         // Defer state change to avoid change detection errors
         setTimeout(() => {
+          this.feedbackData.set(grievanceId, feedback);
           const grievance = this.eligibleGrievances.find(g => g.id === grievanceId);
           if (grievance) {
             (grievance as any).feedbackSubmitted = true;
@@ -188,10 +190,11 @@ export class FeedbackComponent implements OnInit {
     };
 
     this.feedbackService.submitFeedback(grievanceId, request).subscribe({
-      next: () => {
+      next: (feedback: FeedbackResponseDto) => {
         this.notificationService.showSuccess('Feedback submitted successfully');
         // Defer state changes to avoid change detection errors
         setTimeout(() => {
+          this.feedbackData.set(grievanceId, feedback);
           const grievance = this.eligibleGrievances.find(g => g.id === grievanceId);
           if (grievance) {
             (grievance as any).feedbackSubmitted = true;
@@ -214,5 +217,9 @@ export class FeedbackComponent implements OnInit {
   hasFeedback(grievanceId: number): boolean {
     const grievance = this.eligibleGrievances.find(g => g.id === grievanceId);
     return (grievance as any)?.feedbackSubmitted || false;
+  }
+
+  getFeedback(grievanceId: number): FeedbackResponseDto | undefined {
+    return this.feedbackData.get(grievanceId);
   }
 }

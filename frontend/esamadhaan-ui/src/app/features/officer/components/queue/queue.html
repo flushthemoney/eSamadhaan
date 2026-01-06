@@ -20,7 +20,7 @@
         </mat-form-field>
       </div>
 
-      @if (filteredGrievances.length === 0) {
+      @if (grievances.length === 0) {
         <app-empty-state
           icon="inbox"
           message="No grievances found"
@@ -28,7 +28,7 @@
         ></app-empty-state>
       } @else {
         <div class="table-container">
-          <table mat-table [dataSource]="filteredGrievances" class="queue-table">
+          <table mat-table [dataSource]="dataSource" class="queue-table">
             <ng-container matColumnDef="grievanceNumber">
               <th mat-header-cell *matHeaderCellDef>Grievance Number</th>
               <td mat-cell *matCellDef="let grievance">{{ grievance.grievanceNumber }}</td>
@@ -65,15 +65,10 @@
           </table>
         </div>
 
-        @if (grievances.length > pageSize) {
-          <mat-paginator
-            [length]="grievances.length"
-            [pageSize]="pageSize"
-            [pageIndex]="pageIndex"
-            [pageSizeOptions]="[10, 25, 50]"
-            (page)="onPageChange($event)"
-          ></mat-paginator>
-        }
+        <mat-paginator
+          [pageSizeOptions]="[10, 25, 50]"
+          showFirstLastButtons
+        ></mat-paginator>
       }
     </mat-card-content>
   </mat-card>

@@ -35,6 +35,7 @@ import { GrievanceStatus } from '../../../../models/common';
 export class SupervisorDashboardComponent implements OnInit {
   dashboardData: any = null;
   isLoading = false;
+  topCategoriesList: Array<{ name: string; count: number }> = [];
 
   constructor(private grievanceService: GrievanceService, private cdr: ChangeDetectorRef) {}
 
@@ -48,17 +49,28 @@ export class SupervisorDashboardComponent implements OnInit {
       next: (data) => {
         setTimeout(() => {
           this.dashboardData = data;
+          this.updateTopCategories();
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
       error: () => {
         setTimeout(() => {
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
     });
+  }
+
+  private updateTopCategories(): void {
+    if (!this.dashboardData?.topCategories) {
+      this.topCategoriesList = [];
+      return;
+    }
+    this.topCategoriesList = Object.entries(this.dashboardData.topCategories)
+      .map(([name, count]) => ({ name, count: count as number }))
+      .sort((a, b) => b.count - a.count);
   }
 
   formatResolutionTime(days: number | null | undefined): string {
@@ -87,18 +99,10 @@ export class SupervisorDashboardComponent implements OnInit {
   }
 
   hasTopCategories(): boolean {
-    if (!this.dashboardData?.topCategories) {
-      return false;
-    }
-    return Object.keys(this.dashboardData.topCategories).length > 0;
+    return this.topCategoriesList.length > 0;
   }
 
   getTopCategories(): Array<{ name: string; count: number }> {
-    if (!this.dashboardData?.topCategories) {
-      return [];
-    }
-    return Object.entries(this.dashboardData.topCategories)
-      .map(([name, count]) => ({ name, count: count as number }))
-      .sort((a, b) => b.count - a.count);
+    return this.topCategoriesList;
   }
 }

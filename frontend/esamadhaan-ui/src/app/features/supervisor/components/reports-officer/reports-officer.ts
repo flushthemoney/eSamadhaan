@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -37,6 +37,7 @@ import { DepartmentDto } from '../../../../models/department';
 export class ReportsOfficerComponent implements OnInit {
   displayedColumns: string[] = ['officerName', 'departmentName', 'totalAssigned', 'resolved', 'pending', 'resolutionRate', 'avgResolutionTime'];
   officerPerformance: any[] = [];
+  dataSource = new MatTableDataSource<any>([]);
   isLoading = false;
   topCount: number = 10;
   departments: DepartmentDto[] = [];
@@ -73,6 +74,7 @@ export class ReportsOfficerComponent implements OnInit {
         // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.officerPerformance = data;
+          this.dataSource.data = data;
           this.isLoading = false;
           this.cdr.markForCheck();
         }, 0);
@@ -86,6 +88,7 @@ export class ReportsOfficerComponent implements OnInit {
       },
     });
   }
+  
 
   onTopCountChange(): void {
     this.loadOfficerPerformance();

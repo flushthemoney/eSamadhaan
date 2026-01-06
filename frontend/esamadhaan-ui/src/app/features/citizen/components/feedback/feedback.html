@@ -24,9 +24,31 @@
         <p><strong>Created:</strong> {{ grievance.createdAt | relativeTime }}</p>
 
         @if (hasFeedback(grievance.id)) {
-          <div class="feedback-submitted">
-            <mat-icon>check_circle</mat-icon>
-            <span>Feedback Submitted</span>
+          <div class="feedback-submitted-section">
+            <div class="feedback-submitted-header">
+              <mat-icon>check_circle</mat-icon>
+              <span>Feedback Submitted</span>
+            </div>
+            @if (getFeedback(grievance.id)) {
+              <div class="feedback-details">
+                <div class="feedback-rating">
+                  <strong>Rating:</strong>
+                  <div class="stars-display">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <mat-icon [class.filled]="star <= (getFeedback(grievance.id)?.rating || 0)">
+                        {{ star <= (getFeedback(grievance.id)?.rating || 0) ? 'star' : 'star_border' }}
+                      </mat-icon>
+                    }
+                  </div>
+                </div>
+                @if (getFeedback(grievance.id)?.comment) {
+                  <div class="feedback-comment">
+                    <strong>Comment:</strong>
+                    <p>{{ getFeedback(grievance.id)?.comment }}</p>
+                  </div>
+                }
+              </div>
+            }
           </div>
         } @else {
           <form [formGroup]="feedbackForms.get(grievance.id)!" (ngSubmit)="submitFeedback(grievance.id)">

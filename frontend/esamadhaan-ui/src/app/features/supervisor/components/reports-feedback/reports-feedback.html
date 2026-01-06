@@ -43,7 +43,7 @@
       </div>
 
       <h3 style="margin-top: 2rem;">Rating Distribution</h3>
-      <table mat-table [dataSource]="getRatingDistribution()" class="report-table">
+      <table mat-table [dataSource]="dataSource" class="report-table">
         <ng-container matColumnDef="rating">
           <th mat-header-cell *matHeaderCellDef>Rating</th>
           <td mat-cell *matCellDef="let item">{{ item.rating }} ⭐</td>

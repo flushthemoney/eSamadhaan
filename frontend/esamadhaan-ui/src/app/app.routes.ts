@@ -4,9 +4,10 @@ import { RegisterComponent } from './features/auth/components/register/register'
 import { ChangePasswordComponent } from './features/auth/components/change-password/change-password';
 import { UnauthorizedComponent } from './shared/components/unauthorized/unauthorized';
 import { NotFoundComponent } from './shared/components/not-found/not-found';
+import { LandingComponent } from './features/landing/landing.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/auth/login', pathMatch: 'full' },
+  { path: '', component: LandingComponent },
   
   // Public auth routes
   { path: 'auth/login', component: LoginComponent },

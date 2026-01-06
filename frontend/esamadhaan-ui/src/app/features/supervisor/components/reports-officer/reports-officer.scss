@@ -10,7 +10,19 @@
   max-width: 120px;
 }
 
-.report-table {
-  width: 100%;
+// Table styling is handled globally in styles.scss
+// Component-specific styles below
+
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.top-count-field {
+  width: 120px;
+  max-width: 120px;
 }
 

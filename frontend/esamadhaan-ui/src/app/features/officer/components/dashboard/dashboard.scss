@@ -1,3 +1,17 @@
+// Fix mat-grid-tile overflow to show shadows and rounded corners
+::ng-deep mat-grid-tile {
+  overflow: visible !important;
+}
+
+mat-grid-tile {
+  overflow: visible !important;
+  
+  mat-card {
+    border: none !important;
+    outline: none !important;
+  }
+}
+
 .stat-card {
   height: 100%;
   width: 100%;
@@ -6,10 +20,15 @@
   justify-content: center;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
+  border: none !important;
+  outline: none !important;
+  overflow: hidden;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2) !important;
   }
 
   &.primary {
@@ -20,6 +39,7 @@
     font-size: 32px;
     font-weight: 500;
     text-align: center;
+    color: #2196f3;
   }
 
   .stat-label {
@@ -28,6 +48,17 @@
     text-align: center;
     margin-top: 0.5rem;
   }
+}
+
+mat-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border-radius: 8px !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.dashboard-section-card {
+  margin-top: 2rem;
 }
 
 a[mat-list-item] {
