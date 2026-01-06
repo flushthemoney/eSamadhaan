@@ -64,11 +64,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       next: (data) => {
         // Defer state changes to avoid change detection errors
         setTimeout(() => {
-          // Sort by createdAt ascending (oldest first)
+          // Sort by createdAt descending (most recent first)
           const sortedData = data.sort((a, b) => {
             const dateA = new Date(a.createdAt).getTime();
             const dateB = new Date(b.createdAt).getTime();
-            return dateA - dateB; // Ascending order (oldest first)
+            return dateB - dateA; // Descending order (most recent first)
           });
           this.grievances = sortedData;
           this.dataSource.data = sortedData;
