@@ -1,0 +1,83 @@
+@if (isLoading) {
+  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+} @else if (grievance) {
+  <app-page-header [title]="'Grievance #' + grievance.grievanceNumber">
+    <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
+  </app-page-header>
+
+  <div class="grievance-detail">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Grievance Details</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="detail-row">
+          <strong>Department:</strong> {{ grievance.departmentName }}
+        </div>
+        <div class="detail-row">
+          <strong>Category:</strong> {{ grievance.categoryName }}
+        </div>
+        <div class="detail-row">
+          <strong>Description:</strong>
+          <p>{{ grievance.description }}</p>
+        </div>
+        <div class="detail-row">
+          <strong>Created:</strong> {{ grievance.createdAt | relativeTime }}
+        </div>
+        @if (grievance.currentAssignment) {
+          <div class="detail-row">
+            <strong>Assigned Officer:</strong> {{ grievance.currentAssignment.officerName }}
+            <small>(Assigned {{ grievance.currentAssignment.assignedAt | relativeTime }})</small>
+          </div>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    @if (grievance.resolution) {
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Resolution</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>{{ grievance.resolution.resolutionRemarks }}</p>
+          <small>Resolved by {{ grievance.resolution.resolvedByOfficerName }} on {{ grievance.resolution.resolvedAt | relativeTime }}</small>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Status History</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        @if (grievance.statusHistory && grievance.statusHistory.length > 0) {
+          <div class="timeline">
+            @for (item of grievance.statusHistory; track item.id) {
+              <div class="timeline-item">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                  <strong>{{ getStatusHistoryLabel(item) }}</strong>
+                  <p>{{ item.changedByUserName }}</p>
+                  <small>{{ item.changedAt | relativeTime }}</small>
+                  @if (item.remarks) {
+                    <p>{{ item.remarks }}</p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p>No status history available</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <div class="action-buttons">
+      <button mat-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+        Back to Grievances
+      </button>
+    </div>
+  </div>
+}
+

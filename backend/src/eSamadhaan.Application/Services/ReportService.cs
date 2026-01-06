@@ -40,21 +40,21 @@ public class ReportService : IReportService
         
         // LINQ aggregation: Group by status with counts and percentages
         var totalCount = query.Count();
-        var statusCounts = query
+        var statusBreakdown = query
             .GroupBy(g => g.CurrentStatus)
             .Select(group => new
             {
-                Status = group.Key,
-                Count = group.Count(),
-                Percentage = totalCount > 0 ? (double)group.Count() / totalCount * 100 : 0
+                status = group.Key,
+                count = group.Count(),
+                percentage = totalCount > 0 ? Math.Round((double)group.Count() / totalCount * 100, 2) : 0.0
             })
-            .OrderBy(x => x.Status)
+            .OrderBy(x => x.status)
             .ToList();
 
         return new
         {
-            TotalGrievances = totalCount,
-            StatusBreakdown = statusCounts
+            totalGrievances = totalCount,
+            statusBreakdown = statusBreakdown
         };
     }
 
@@ -230,37 +230,39 @@ public class ReportService : IReportService
         var grievanceQuery = _grievanceRepository.GetQueryable();
 
         // LINQ aggregations: Calculate resolution time statistics
-        var resolutionTimes = resolutionQuery
+        var resolutionTimesInHours = resolutionQuery
             .Join(grievanceQuery,
                 resolution => resolution.GrievanceId,
                 grievance => grievance.Id,
                 (resolution, grievance) => (resolution.ResolvedAt - grievance.CreatedAt).TotalHours)
             .ToList();
 
-        if (!resolutionTimes.Any())
+        if (!resolutionTimesInHours.Any())
         {
             return new
             {
-                TotalResolutions = 0,
-                AverageHours = 0.0,
-                MinimumHours = 0.0,
-                MaximumHours = 0.0,
-                MedianHours = 0.0
+                totalResolvedGrievances = 0,
+                averageResolutionTimeInDays = 0.0,
+                minResolutionTimeInDays = 0.0,
+                maxResolutionTimeInDays = 0.0,
+                medianResolutionTimeInDays = 0.0
             };
         }
 
-        var sortedTimes = resolutionTimes.OrderBy(x => x).ToList();
+        // Convert hours to days
+        var resolutionTimesInDays = resolutionTimesInHours.Select(h => h / 24.0).ToList();
+        var sortedTimes = resolutionTimesInDays.OrderBy(x => x).ToList();
         var median = sortedTimes.Count % 2 == 0
             ? (sortedTimes[sortedTimes.Count / 2 - 1] + sortedTimes[sortedTimes.Count / 2]) / 2
             : sortedTimes[sortedTimes.Count / 2];
 
         return new
         {
-            TotalResolutions = resolutionTimes.Count,
-            AverageHours = Math.Round(resolutionTimes.Average(), 2),
-            MinimumHours = Math.Round(resolutionTimes.Min(), 2),
-            MaximumHours = Math.Round(resolutionTimes.Max(), 2),
-            MedianHours = Math.Round(median, 2)
+            totalResolvedGrievances = resolutionTimesInDays.Count,
+            averageResolutionTimeInDays = Math.Round(resolutionTimesInDays.Average(), 2),
+            minResolutionTimeInDays = Math.Round(resolutionTimesInDays.Min(), 2),
+            maxResolutionTimeInDays = Math.Round(resolutionTimesInDays.Max(), 2),
+            medianResolutionTimeInDays = Math.Round(median, 2)
         };
     }
 
@@ -276,7 +278,7 @@ public class ReportService : IReportService
         var grievanceQuery = _grievanceRepository.GetQueryable();
 
         // LINQ aggregations: Calculate resolution time for department
-        var resolutionTimes = resolutionQuery
+        var resolutionTimesInHours = resolutionQuery
             .Join(grievanceQuery,
                 resolution => resolution.GrievanceId,
                 grievance => grievance.Id,
@@ -289,21 +291,24 @@ public class ReportService : IReportService
             .Select(x => x.ResolutionTime)
             .ToList();
 
-        if (!resolutionTimes.Any())
+        if (!resolutionTimesInHours.Any())
         {
             return new
             {
-                DepartmentId = departmentId,
-                TotalResolutions = 0,
-                AverageHours = 0.0
+                departmentId = departmentId,
+                totalResolvedGrievances = 0,
+                averageResolutionTimeInDays = 0.0
             };
         }
 
+        // Convert hours to days
+        var resolutionTimesInDays = resolutionTimesInHours.Select(h => h / 24.0).ToList();
+
         return new
         {
-            DepartmentId = departmentId,
-            TotalResolutions = resolutionTimes.Count,
-            AverageHours = Math.Round(resolutionTimes.Average(), 2)
+            departmentId = departmentId,
+            totalResolvedGrievances = resolutionTimesInDays.Count,
+            averageResolutionTimeInDays = Math.Round(resolutionTimesInDays.Average(), 2)
         };
     }
 
@@ -319,7 +324,7 @@ public class ReportService : IReportService
         var grievanceQuery = _grievanceRepository.GetQueryable();
 
         // LINQ aggregations: Calculate resolution time for category
-        var resolutionTimes = resolutionQuery
+        var resolutionTimesInHours = resolutionQuery
             .Join(grievanceQuery,
                 resolution => resolution.GrievanceId,
                 grievance => grievance.Id,
@@ -332,21 +337,24 @@ public class ReportService : IReportService
             .Select(x => x.ResolutionTime)
             .ToList();
 
-        if (!resolutionTimes.Any())
+        if (!resolutionTimesInHours.Any())
         {
             return new
             {
-                CategoryId = categoryId,
-                TotalResolutions = 0,
-                AverageHours = 0.0
+                categoryId = categoryId,
+                totalResolvedGrievances = 0,
+                averageResolutionTimeInDays = 0.0
             };
         }
 
+        // Convert hours to days
+        var resolutionTimesInDays = resolutionTimesInHours.Select(h => h / 24.0).ToList();
+
         return new
         {
-            CategoryId = categoryId,
-            TotalResolutions = resolutionTimes.Count,
-            AverageHours = Math.Round(resolutionTimes.Average(), 2)
+            categoryId = categoryId,
+            totalResolvedGrievances = resolutionTimesInDays.Count,
+            averageResolutionTimeInDays = Math.Round(resolutionTimesInDays.Average(), 2)
         };
     }
 
@@ -385,57 +393,95 @@ public class ReportService : IReportService
         };
     }
 
-    public async Task<IEnumerable<object>> GetTopPerformingOfficersAsync(int topCount)
+    public async Task<IEnumerable<object>> GetTopPerformingOfficersAsync(int topCount, int? departmentId = null)
     {
+        var assignmentQuery = _assignmentRepository.GetQueryable();
         var resolutionQuery = _resolutionRepository.GetQueryable();
         var grievanceQuery = _grievanceRepository.GetQueryable();
 
-        // Get all resolutions with their grievance creation times - Fixed to avoid LINQ translation error
-        var resolutionsWithGrievances = resolutionQuery
-            .Select(r => new { r.ResolvedByOfficerId, r.GrievanceId, r.ResolvedAt })
-            .ToList();
+        // Get all officers who have assignments, filtered by department if provided
+        IQueryable<int> officerIdsQuery = assignmentQuery
+            .Select(a => a.OfficerId)
+            .Distinct();
 
-        var grievanceCreationTimes = grievanceQuery
-            .Select(g => new { g.Id, g.CreatedAt })
-            .ToList();
-
-        // Calculate officer statistics using client-side LINQ
-        var officerStats = resolutionsWithGrievances
-            .Join(grievanceCreationTimes,
-                r => r.GrievanceId,
-                g => g.Id,
-                (r, g) => new
-                {
-                    r.ResolvedByOfficerId,
-                    ResolutionTime = (r.ResolvedAt - g.CreatedAt).TotalHours
-                })
-            .GroupBy(x => x.ResolvedByOfficerId)
-            .Select(group => new
-            {
-                OfficerId = group.Key,
-                ResolutionCount = group.Count(),
-                AverageResolutionTime = group.Average(x => x.ResolutionTime)
-            })
-            .OrderByDescending(x => x.ResolutionCount)
-            .ThenBy(x => x.AverageResolutionTime)
-            .Take(topCount)
-            .ToList();
-
-        // Enrich with officer names
-        var result = new List<object>();
-        foreach (var stat in officerStats)
+        if (departmentId.HasValue)
         {
-            var officer = await _userRepository.GetByIdAsync(stat.OfficerId);
+            officerIdsQuery = assignmentQuery
+                .Where(a => a.Grievance.DepartmentId == departmentId.Value)
+                .Select(a => a.OfficerId)
+                .Distinct();
+        }
+
+        var officerIds = officerIdsQuery.ToList();
+        var result = new List<object>();
+
+        foreach (var officerId in officerIds)
+        {
+            var officer = await _userRepository.GetByIdAsync(officerId);
+            if (officer == null || officer.Role != "DepartmentOfficer") continue;
+
+            // Get all assignments for this officer, filtered by department if provided
+            var officerAssignmentsQuery = assignmentQuery.Where(a => a.OfficerId == officerId);
+            if (departmentId.HasValue)
+            {
+                officerAssignmentsQuery = officerAssignmentsQuery.Where(a => a.Grievance.DepartmentId == departmentId.Value);
+            }
+            var officerAssignments = officerAssignmentsQuery.ToList();
+            var assignedGrievanceIds = officerAssignments.Select(a => a.GrievanceId).ToList();
+
+            var totalAssignedGrievances = assignedGrievanceIds.Count;
+
+            // Get resolved grievances - count resolutions for grievances assigned to this officer
+            var resolvedGrievanceIds = resolutionQuery
+                .Where(r => r.ResolvedByOfficerId == officerId && assignedGrievanceIds.Contains(r.GrievanceId))
+                .Select(r => r.GrievanceId)
+                .Distinct()
+                .ToList();
+
+            var resolvedGrievances = resolvedGrievanceIds.Count;
+            var pendingGrievances = totalAssignedGrievances - resolvedGrievances;
+            var resolutionRate = totalAssignedGrievances > 0 
+                ? Math.Round((double)resolvedGrievances / totalAssignedGrievances * 100, 2) 
+                : 0.0;
+
+            // Calculate average resolution time in days for resolved grievances assigned to this officer
+            var resolutionTimesInHours = resolutionQuery
+                .Where(r => r.ResolvedByOfficerId == officerId && assignedGrievanceIds.Contains(r.GrievanceId))
+                .Join(grievanceQuery,
+                    resolution => resolution.GrievanceId,
+                    grievance => grievance.Id,
+                    (resolution, grievance) => (resolution.ResolvedAt - grievance.CreatedAt).TotalHours)
+                .ToList();
+
+            var averageResolutionTimeInDays = resolutionTimesInHours.Any()
+                ? Math.Round(resolutionTimesInHours.Average() / 24.0, 2)
+                : 0.0;
+
+            // Get department name
+            var departmentName = officer.DepartmentId.HasValue
+                ? (await _departmentRepository.GetByIdAsync(officer.DepartmentId.Value))?.Name ?? "Unknown"
+                : "Unknown";
+
             result.Add(new
             {
-                stat.OfficerId,
-                OfficerName = officer?.Name ?? "Unknown",
-                stat.ResolutionCount,
-                AverageResolutionTimeHours = Math.Round(stat.AverageResolutionTime, 2)
+                officerId = officerId,
+                officerName = officer.Name,
+                departmentName = departmentName,
+                totalAssignedGrievances = totalAssignedGrievances,
+                resolvedGrievances = resolvedGrievances,
+                pendingGrievances = pendingGrievances,
+                resolutionRate = resolutionRate,
+                averageResolutionTimeInDays = averageResolutionTimeInDays
             });
         }
 
-        return result;
+        // Sort by resolution rate descending, then by total assigned descending, then by average resolution time ascending
+        return result
+            .OrderByDescending(x => ((dynamic)x).resolutionRate)
+            .ThenByDescending(x => ((dynamic)x).totalAssignedGrievances)
+            .ThenBy(x => ((dynamic)x).averageResolutionTimeInDays)
+            .Take(topCount)
+            .ToList();
     }
 
     public async Task<IEnumerable<object>> GetGrievanceTrendReportAsync(DateTime startDate, DateTime endDate, string groupBy)
@@ -558,15 +604,19 @@ public class ReportService : IReportService
         {
             return new
             {
-                TotalFeedbacks = 0,
-                AverageRating = 0.0,
-                RatingDistribution = new Dictionary<int, int>()
+                totalFeedbackCount = 0,
+                averageRating = 0.0,
+                feedbackCountByRating = new Dictionary<int, int>(),
+                ratingPercentages = new Dictionary<int, double>(),
+                positiveFeedbackCount = 0,
+                negativeFeedbackCount = 0,
+                positiveFeedbackPercentage = 0.0
             };
         }
 
         var averageRating = feedbackQuery.Average(f => f.Rating);
         
-        var ratingDistribution = feedbackQuery
+        var feedbackCountByRating = feedbackQuery
             .GroupBy(f => f.Rating)
             .Select(group => new { Rating = group.Key, Count = group.Count() })
             .ToDictionary(x => x.Rating, x => x.Count);
@@ -574,17 +624,34 @@ public class ReportService : IReportService
         // Ensure all ratings 1-5 are represented
         for (int rating = 1; rating <= 5; rating++)
         {
-            if (!ratingDistribution.ContainsKey(rating))
+            if (!feedbackCountByRating.ContainsKey(rating))
             {
-                ratingDistribution[rating] = 0;
+                feedbackCountByRating[rating] = 0;
             }
         }
 
+        // Calculate percentages
+        var ratingPercentages = feedbackCountByRating.ToDictionary(
+            kvp => kvp.Key,
+            kvp => totalFeedbacks > 0 ? Math.Round((double)kvp.Value / totalFeedbacks * 100, 2) : 0.0
+        );
+
+        // Calculate positive (>=4) and negative (<=2) feedback counts
+        var positiveFeedbackCount = feedbackQuery.Count(f => f.Rating >= 4);
+        var negativeFeedbackCount = feedbackQuery.Count(f => f.Rating <= 2);
+        var positiveFeedbackPercentage = totalFeedbacks > 0 
+            ? Math.Round((double)positiveFeedbackCount / totalFeedbacks * 100, 2) 
+            : 0.0;
+
         return new
         {
-            TotalFeedbacks = totalFeedbacks,
-            AverageRating = Math.Round(averageRating, 2),
-            RatingDistribution = ratingDistribution
+            totalFeedbackCount = totalFeedbacks,
+            averageRating = Math.Round(averageRating, 2),
+            feedbackCountByRating = feedbackCountByRating,
+            ratingPercentages = ratingPercentages,
+            positiveFeedbackCount = positiveFeedbackCount,
+            negativeFeedbackCount = negativeFeedbackCount,
+            positiveFeedbackPercentage = positiveFeedbackPercentage
         };
     }
 
@@ -609,30 +676,62 @@ public class ReportService : IReportService
             .Select(x => x.Feedback)
             .ToList();
 
-        if (!departmentFeedbacks.Any())
+        var totalFeedbacks = departmentFeedbacks.Count;
+
+        if (totalFeedbacks == 0)
         {
             return new
             {
-                DepartmentId = departmentId,
-                TotalFeedbacks = 0,
-                AverageRating = 0.0,
-                RatingDistribution = new Dictionary<int, int>()
+                departmentId = departmentId,
+                totalFeedbackCount = 0,
+                averageRating = 0.0,
+                feedbackCountByRating = new Dictionary<int, int>(),
+                ratingPercentages = new Dictionary<int, double>(),
+                positiveFeedbackCount = 0,
+                negativeFeedbackCount = 0,
+                positiveFeedbackPercentage = 0.0
             };
         }
 
         var averageRating = departmentFeedbacks.Average(f => f.Rating);
         
-        var ratingDistribution = departmentFeedbacks
+        var feedbackCountByRating = departmentFeedbacks
             .GroupBy(f => f.Rating)
             .Select(group => new { Rating = group.Key, Count = group.Count() })
             .ToDictionary(x => x.Rating, x => x.Count);
 
+        // Ensure all ratings 1-5 are represented
+        for (int rating = 1; rating <= 5; rating++)
+        {
+            if (!feedbackCountByRating.ContainsKey(rating))
+            {
+                feedbackCountByRating[rating] = 0;
+            }
+        }
+
+        // Calculate percentages
+        var ratingPercentages = feedbackCountByRating.ToDictionary(
+            kvp => kvp.Key,
+            kvp => totalFeedbacks > 0 ? Math.Round((double)kvp.Value / totalFeedbacks * 100, 2) : 0.0
+        );
+
+        // Calculate positive (>=4) and negative (<=2) feedback counts
+        var positiveFeedbackCount = departmentFeedbacks.Count(f => f.Rating >= 4);
+        var negativeFeedbackCount = departmentFeedbacks.Count(f => f.Rating <= 2);
+        var positiveFeedbackPercentage = totalFeedbacks > 0 
+            ? Math.Round((double)positiveFeedbackCount / totalFeedbacks * 100, 2) 
+            : 0.0;
+
         return new
         {
-            DepartmentId = departmentId,
-            TotalFeedbacks = departmentFeedbacks.Count,
-            AverageRating = Math.Round(averageRating, 2),
-            RatingDistribution = ratingDistribution
+            departmentId = departmentId,
+            totalFeedbackCount = totalFeedbacks,
+            averageRating = Math.Round(averageRating, 2),
+            feedbackCountByRating = feedbackCountByRating,
+            ratingPercentages = ratingPercentages,
+            positiveFeedbackCount = positiveFeedbackCount,
+            negativeFeedbackCount = negativeFeedbackCount,
+            positiveFeedbackPercentage = positiveFeedbackPercentage
         };
     }
 
@@ -654,13 +753,87 @@ public class ReportService : IReportService
             .Select(group => new { Status = group.Key, Count = group.Count() })
             .ToDictionary(x => x.Status, x => x.Count);
 
-        var pendingCount = statusCounts.GetValueOrDefault(GrievanceStatus.Submitted, 0) +
-                          statusCounts.GetValueOrDefault(GrievanceStatus.Assigned, 0) +
-                          statusCounts.GetValueOrDefault(GrievanceStatus.InReview, 0);
+        // Individual status counts
+        var submittedGrievances = statusCounts.GetValueOrDefault(GrievanceStatus.Submitted, 0);
+        var assignedGrievances = statusCounts.GetValueOrDefault(GrievanceStatus.Assigned, 0);
+        var inReviewGrievances = statusCounts.GetValueOrDefault(GrievanceStatus.InReview, 0);
+        var resolvedGrievances = statusCounts.GetValueOrDefault(GrievanceStatus.Resolved, 0);
+        var closedGrievances = statusCounts.GetValueOrDefault(GrievanceStatus.Closed, 0);
 
-        var resolvedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Resolved, 0) +
-                           statusCounts.GetValueOrDefault(GrievanceStatus.Closed, 0);
-        var closedCount = statusCounts.GetValueOrDefault(GrievanceStatus.Closed, 0);
+        var resolvedCount = resolvedGrievances + closedGrievances;
+
+        // Calculate resolution rate
+        var resolutionRate = totalGrievances > 0 
+            ? Math.Round((double)resolvedCount / totalGrievances * 100, 2) 
+            : 0;
+
+        // Calculate average resolution time in days
+        var resolutionQuery = _resolutionRepository.GetQueryable();
+        var resolutionTimes = resolutionQuery
+            .Join(grievanceQuery,
+                resolution => resolution.GrievanceId,
+                grievance => grievance.Id,
+                (resolution, grievance) => new
+                {
+                    DepartmentId = grievance.DepartmentId,
+                    ResolutionTimeDays = (resolution.ResolvedAt - grievance.CreatedAt).TotalDays
+                })
+            .ToList();
+
+        // Apply department filter if provided
+        if (departmentId.HasValue)
+        {
+            resolutionTimes = resolutionTimes
+                .Where(x => x.DepartmentId == departmentId.Value)
+                .ToList();
+        }
+
+        var averageResolutionTimeInDays = resolutionTimes.Any()
+            ? Math.Round(resolutionTimes.Average(x => x.ResolutionTimeDays), 2)
+            : 0.0;
+
+        // Calculate average feedback rating
+        var feedbackQuery = _feedbackRepository.GetQueryable();
+        var feedbackRatings = feedbackQuery
+            .Join(grievanceQuery,
+                feedback => feedback.GrievanceId,
+                grievance => grievance.Id,
+                (feedback, grievance) => new
+                {
+                    DepartmentId = grievance.DepartmentId,
+                    Rating = feedback.Rating
+                })
+            .ToList();
+
+        // Apply department filter if provided
+        if (departmentId.HasValue)
+        {
+            feedbackRatings = feedbackRatings
+                .Where(x => x.DepartmentId == departmentId.Value)
+                .ToList();
+        }
+
+        var averageFeedbackRating = feedbackRatings.Any()
+            ? Math.Round(feedbackRatings.Average(f => f.Rating), 2)
+            : 0.0;
+
+        // Count total resolutions (not status count, but actual resolution records)
+        var totalResolutions = resolutionQuery
+            .Join(grievanceQuery,
+                resolution => resolution.GrievanceId,
+                grievance => grievance.Id,
+                (resolution, grievance) => new { DepartmentId = grievance.DepartmentId })
+            .ToList();
+
+        // Apply department filter if provided
+        if (departmentId.HasValue)
+        {
+            totalResolutions = totalResolutions
+                .Where(x => x.DepartmentId == departmentId.Value)
+                .ToList();
+        }
+
+        var totalResolutionsCount = totalResolutions.Count;
 
         // Recent grievances
         var recentGrievances = grievanceQuery
@@ -668,12 +841,35 @@ public class ReportService : IReportService
             .Take(10)
             .Select(g => new
             {
-                g.Id,
-                g.GrievanceNumber,
-                g.CurrentStatus,
-                g.CreatedAt
+                id = g.Id,
+                grievanceNumber = g.GrievanceNumber,
+                status = g.CurrentStatus.ToString(),
+                createdAt = g.CreatedAt
             })
             .ToList();
+
+        // Recent assignments
+        var assignmentQuery = _assignmentRepository.GetQueryable();
+        var recentAssignments = assignmentQuery
+            .Where(a => departmentId == null || a.Grievance.DepartmentId == departmentId.Value)
+            .OrderByDescending(a => a.AssignedAt)
+            .Take(10)
+            .Select(a => new
+            {
+                grievanceId = a.GrievanceId,
+                grievanceNumber = a.Grievance.GrievanceNumber,
+                officerName = a.Officer.Name,
+                assignedAt = a.AssignedAt
+            })
+            .ToList();
+
+        // Top categories
+        var topCategories = grievanceQuery
+            .GroupBy(g => new { g.CategoryId, g.Category.Name })
+            .Select(group => new { CategoryName = group.Key.Name, Count = group.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(5)
+            .ToDictionary(x => x.CategoryName, x => x.Count);
 
         // Officer workload if userId provided
         object? officerWorkload = null;
@@ -682,25 +878,32 @@ public class ReportService : IReportService
             var activeAssignments = _assignmentRepository.GetQueryable()
                 .Count(a => a.OfficerId == userId.Value && a.IsActive);
             
-            var totalResolutions = _resolutionRepository.GetQueryable()
+            var officerTotalResolutions = _resolutionRepository.GetQueryable()
                 .Count(r => r.ResolvedByOfficerId == userId.Value);
 
             officerWorkload = new
             {
-                ActiveAssignments = activeAssignments,
-                TotalResolutions = totalResolutions
+                activeAssignments = activeAssignments,
+                totalResolutions = officerTotalResolutions
             };
         }
 
         return new
         {
-            TotalGrievances = totalGrievances,
-            PendingCount = pendingCount,
-            ResolvedCount = resolvedCount,
-            ClosedCount = closedCount,
-            StatusBreakdown = statusCounts,
-            RecentGrievances = recentGrievances,
-            OfficerWorkload = officerWorkload
+            totalGrievances = totalGrievances,
+            submittedGrievances = submittedGrievances,
+            assignedGrievances = assignedGrievances,
+            inReviewGrievances = inReviewGrievances,
+            resolvedGrievances = resolvedGrievances,
+            closedGrievances = closedGrievances,
+            totalResolutions = totalResolutionsCount,
+            resolutionRate = resolutionRate,
+            averageResolutionTimeInDays = averageResolutionTimeInDays,
+            averageFeedbackRating = averageFeedbackRating,
+            recentGrievances = recentGrievances,
+            recentAssignments = recentAssignments,
+            topCategories = topCategories,
+            officerWorkload = officerWorkload
         };
     }
 

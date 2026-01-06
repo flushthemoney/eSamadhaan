@@ -25,7 +25,7 @@
 
         <mat-form-field appearance="outline" style="flex: 1;">
           <mat-label>Category</mat-label>
-          <mat-select formControlName="categoryId" [disabled]="!searchForm.get('departmentId')?.value">
+          <mat-select formControlName="categoryId">
             <mat-option [value]="">All Categories</mat-option>
             @for (cat of categories; track cat.id) {
               <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
@@ -113,7 +113,7 @@
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" (click)="onRowClick(row)" class="clickable-row"></tr>
       </table>
 
       @if (grievances.length > pageSize) {

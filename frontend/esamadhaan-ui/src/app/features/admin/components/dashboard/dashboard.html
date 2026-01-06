@@ -17,7 +17,7 @@
     <mat-grid-tile>
       <mat-card class="stat-card">
         <mat-card-content>
-          <div class="stat-value">{{ dashboardData.resolvedGrievances || 0 }}</div>
+          <div class="stat-value">{{ dashboardData.totalResolutions || 0 }}</div>
           <div class="stat-label">Resolved</div>
         </mat-card-content>
       </mat-card>
@@ -35,40 +35,43 @@
     <mat-grid-tile>
       <mat-card class="stat-card">
         <mat-card-content>
-          <div class="stat-value">{{ dashboardData.averageResolutionTimeInDays?.toFixed(1) || 0 }}d</div>
+          <div class="stat-value">{{ formatResolutionTime(dashboardData.averageResolutionTimeInDays) }}</div>
           <div class="stat-label">Avg Resolution Time</div>
         </mat-card-content>
       </mat-card>
     </mat-grid-tile>
   </mat-grid-list>
 
-  <mat-grid-list cols="2" rowHeight="200px" gutterSize="16px" style="margin-top: 16px;">
+  <mat-grid-list cols="2" rowHeight="400px" gutterSize="16px" style="margin-top: 24px;">
     <mat-grid-tile>
-      <mat-card>
+      <mat-card class="distribution-card">
         <mat-card-header>
-          <mat-card-title>Status Distribution</mat-card-title>
+          <mat-card-title>
+            <mat-icon>pie_chart</mat-icon>
+            Status Distribution
+          </mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <div class="status-list">
             <div class="status-item">
-              <span>Submitted:</span>
-              <strong>{{ dashboardData.submittedGrievances || 0 }}</strong>
+              <span class="status-label">Submitted:</span>
+              <strong class="status-value">{{ dashboardData.submittedGrievances || 0 }}</strong>
             </div>
             <div class="status-item">
-              <span>Assigned:</span>
-              <strong>{{ dashboardData.assignedGrievances || 0 }}</strong>
+              <span class="status-label">Assigned:</span>
+              <strong class="status-value">{{ dashboardData.assignedGrievances || 0 }}</strong>
             </div>
             <div class="status-item">
-              <span>In Review:</span>
-              <strong>{{ dashboardData.inReviewGrievances || 0 }}</strong>
+              <span class="status-label">In Review:</span>
+              <strong class="status-value">{{ dashboardData.inReviewGrievances || 0 }}</strong>
             </div>
             <div class="status-item">
-              <span>Resolved:</span>
-              <strong>{{ dashboardData.resolvedGrievances || 0 }}</strong>
+              <span class="status-label">Resolved:</span>
+              <strong class="status-value">{{ dashboardData.resolvedGrievances || 0 }}</strong>
             </div>
             <div class="status-item">
-              <span>Closed:</span>
-              <strong>{{ dashboardData.closedGrievances || 0 }}</strong>
+              <span class="status-label">Closed:</span>
+              <strong class="status-value">{{ dashboardData.closedGrievances || 0 }}</strong>
             </div>
           </div>
         </mat-card-content>
@@ -76,9 +79,12 @@
     </mat-grid-tile>
 
     <mat-grid-tile>
-      <mat-card>
+      <mat-card class="health-card">
         <mat-card-header>
-          <mat-card-title>System Health</mat-card-title>
+          <mat-card-title>
+            <mat-icon>monitor_heart</mat-icon>
+            System Health Monitor
+          </mat-card-title>
         </mat-card-header>
         <mat-card-content>
           <div class="health-metrics">
@@ -86,6 +92,75 @@
               <div class="metric-label">Average Feedback Rating</div>
               <div class="metric-value">{{ dashboardData.averageFeedbackRating?.toFixed(1) || 0 }}/5.0</div>
             </div>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+              <div class="metric-label">Pending Grievances</div>
+              <div class="metric-value">
+                {{ (dashboardData.submittedGrievances || 0) + (dashboardData.assignedGrievances || 0) + (dashboardData.inReviewGrievances || 0) }}
+              </div>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric-item">
+              <div class="metric-label">Total Resolved</div>
+              <div class="metric-value">
+                {{ (dashboardData.resolvedGrievances || 0) + (dashboardData.closedGrievances || 0) }}
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+  </mat-grid-list>
+
+  <mat-grid-list cols="2" rowHeight="350px" gutterSize="16px" style="margin-top: 24px;">
+    <mat-grid-tile>
+      <mat-card class="recent-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>history</mat-icon>
+            Recent Grievances
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="recent-list">
+            @if (dashboardData.recentGrievances && dashboardData.recentGrievances.length > 0) {
+              @for (grievance of dashboardData.recentGrievances.slice(0, 5); track grievance.id) {
+                <div class="recent-item">
+                  <div class="recent-info">
+                    <div class="recent-number">{{ grievance.grievanceNumber }}</div>
+                    <div class="recent-date">{{ formatDate(grievance.createdAt) | date:'short' }}</div>
+                  </div>
+                  <app-grievance-status-badge [status]="getStatusFromString(grievance.status)"></app-grievance-status-badge>
+                </div>
+              }
+            } @else {
+              <div class="empty-state">No recent grievances</div>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+    <mat-grid-tile>
+      <mat-card class="categories-card">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>category</mat-icon>
+            Top Categories
+          </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="categories-list">
+            @if (hasTopCategories()) {
+              @for (category of getTopCategories(); track category.name) {
+                <div class="category-item">
+                  <span class="category-name">{{ category.name }}</span>
+                  <span class="category-count">{{ category.count }}</span>
+                </div>
+              }
+            } @else {
+              <div class="empty-state">No category data available</div>
+            }
           </div>
         </mat-card-content>
       </mat-card>

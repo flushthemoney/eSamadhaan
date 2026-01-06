@@ -1,3 +1,15 @@
+.filters {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.top-count-field {
+  width: 120px;
+  max-width: 120px;
+}
+
 .report-table {
   width: 100%;
 }

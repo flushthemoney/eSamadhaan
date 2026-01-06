@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { SupervisorLayoutComponent } from './layout/supervisor-layout/supervisor-layout';
 import { SupervisorDashboardComponent } from './components/dashboard/dashboard';
 import { GrievanceMonitorComponent } from './components/grievance-monitor/grievance-monitor';
+import { SupervisorGrievanceDetailComponent } from './components/grievance-detail/grievance-detail';
 import { EscalationsComponent } from './components/escalations/escalations';
 import { ReportsComponent } from './components/reports/reports';
 import { ReportsOverviewComponent } from './components/reports-overview/reports-overview';
@@ -21,6 +22,7 @@ export const supervisorRoutes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
       { path: 'dashboard', component: SupervisorDashboardComponent },
       { path: 'grievances', component: GrievanceMonitorComponent },
+      { path: 'grievances/:id', component: SupervisorGrievanceDetailComponent },
       { path: 'escalations', component: EscalationsComponent },
       {
         path: 'reports',

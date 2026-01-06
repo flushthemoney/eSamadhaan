@@ -194,6 +194,17 @@ public class GrievanceController : ControllerBase
     }
 
     /// <summary>
+    /// Get detailed grievance information for Supervisor/Admin (without department restrictions)
+    /// </summary>
+    [HttpGet("{id}/detail")]
+    [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
+    public async Task<IActionResult> GetGrievanceDetailForSupervisor(int id)
+    {
+        var detail = await _grievanceService.GetGrievanceDetailForSupervisorAsync(id);
+        return Ok(detail);
+    }
+
+    /// <summary>
     /// Get list of grievances for the current citizen
     /// </summary>
     [HttpGet("my-grievances")]
@@ -637,9 +648,9 @@ public class GrievanceController : ControllerBase
     /// </summary>
     [HttpGet("reports/officers/top-performers")]
     [Authorize(Roles = "SupervisoryOfficer,SystemAdmin")]
-    public async Task<IActionResult> GetTopPerformingOfficers([FromQuery] int topCount = 10)
+    public async Task<IActionResult> GetTopPerformingOfficers([FromQuery] int topCount = 10, [FromQuery] int? departmentId = null)
     {
-        var report = await _reportService.GetTopPerformingOfficersAsync(topCount);
+        var report = await _reportService.GetTopPerformingOfficersAsync(topCount, departmentId);
 
         return Ok(report);
     }

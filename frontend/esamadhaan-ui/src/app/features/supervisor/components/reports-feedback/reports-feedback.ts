@@ -51,7 +51,11 @@ export class ReportsFeedbackComponent implements OnInit {
   loadDepartments(): void {
     this.departmentService.getAllDepartments().subscribe({
       next: (data) => {
-        this.departments = data;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.departments = data;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {},
     });
@@ -65,16 +69,18 @@ export class ReportsFeedbackComponent implements OnInit {
     this.isLoading = true;
     this.reportService.getFeedbackAnalytics(this.selectedDepartmentId || undefined).subscribe({
       next: (data) => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.feedbackData = data;
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
       error: () => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
     });

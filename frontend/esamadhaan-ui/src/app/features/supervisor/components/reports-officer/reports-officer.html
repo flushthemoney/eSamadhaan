@@ -3,11 +3,22 @@
 
 <mat-card style="margin-bottom: 1.5rem;">
   <mat-card-content>
-    <mat-form-field appearance="outline">
-      <mat-label>Top Count</mat-label>
-      <input matInput type="number" [(ngModel)]="topCount" (change)="onTopCountChange()" min="1" max="100" />
-      <mat-icon matSuffix>numbers</mat-icon>
-    </mat-form-field>
+    <div class="filters">
+      <mat-form-field appearance="outline" class="top-count-field">
+        <mat-label>Top Count</mat-label>
+        <input matInput type="number" [(ngModel)]="topCount" (change)="onTopCountChange()" min="1" max="100" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Filter by Department</mat-label>
+        <mat-select [(ngModel)]="selectedDepartmentId" (selectionChange)="onDepartmentChange()">
+          <mat-option [value]="null">All Departments</mat-option>
+          @for (dept of departments; track dept.id) {
+            <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
   </mat-card-content>
 </mat-card>
 

@@ -23,7 +23,7 @@ public interface IReportService
     
     // Officer performance
     Task<object> GetOfficerPerformanceReportAsync(int officerId);
-    Task<IEnumerable<object>> GetTopPerformingOfficersAsync(int topCount);
+    Task<IEnumerable<object>> GetTopPerformingOfficersAsync(int topCount, int? departmentId = null);
     
     // Time-based reports
     Task<IEnumerable<object>> GetGrievanceTrendReportAsync(DateTime startDate, DateTime endDate, string groupBy);

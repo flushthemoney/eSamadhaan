@@ -5,6 +5,7 @@ import { DepartmentManagementComponent } from './components/department-managemen
 import { CategoryManagementComponent } from './components/category-management/category-management';
 import { UserManagementComponent } from './components/user-management/user-management';
 import { AdminGrievancesComponent } from './components/grievances/grievances';
+import { AdminGrievanceDetailComponent } from './components/grievance-detail/grievance-detail';
 import { AdminReportsComponent } from './components/reports/reports';
 import { ReportsOverviewComponent } from './components/reports-overview/reports-overview';
 import { ReportsPerformanceComponent } from './components/reports-performance/reports-performance';
@@ -26,6 +27,7 @@ export const adminRoutes: Routes = [
       { path: 'categories', component: CategoryManagementComponent },
       { path: 'users', component: UserManagementComponent },
       { path: 'grievances', component: AdminGrievancesComponent },
+      { path: 'grievances/:id', component: AdminGrievanceDetailComponent },
       {
         path: 'reports',
         component: AdminReportsComponent,

@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -73,12 +73,13 @@ export class GrievanceMonitorComponent implements OnInit {
     private departmentService: DepartmentService,
     private categoryService: CategoryService,
     private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router
   ) {
     this.searchForm = this.fb.group({
       grievanceNumber: [''],
       departmentId: [''],
-      categoryId: [''],
+      categoryId: [{value: '', disabled: true}],
       status: [''],
       fromDate: [''],
       toDate: [''],
@@ -90,10 +91,14 @@ export class GrievanceMonitorComponent implements OnInit {
     this.loadAllGrievances();
 
     this.searchForm.get('departmentId')?.valueChanges.subscribe((departmentId) => {
-      this.searchForm.patchValue({ categoryId: '' });
+      const categoryControl = this.searchForm.get('categoryId');
+      categoryControl?.patchValue('');
       this.categories = [];
       if (departmentId) {
+        categoryControl?.enable();
         this.loadCategories(departmentId);
+      } else {
+        categoryControl?.disable();
       }
     });
   }
@@ -102,17 +107,24 @@ export class GrievanceMonitorComponent implements OnInit {
     this.isLoading = true;
     this.grievanceService.getAllGrievances().subscribe({
       next: (data) => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
-          this.grievances = data;
+          // Sort by newest first (reverse chronological order)
+          this.grievances = data.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA; // Newest first
+          });
           this.applyPagination();
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
       error: () => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
     });
@@ -121,7 +133,11 @@ export class GrievanceMonitorComponent implements OnInit {
   loadDepartments(): void {
     this.departmentService.getAllDepartments().subscribe({
       next: (data) => {
-        this.departments = data;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.departments = data;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {},
     });
@@ -130,7 +146,11 @@ export class GrievanceMonitorComponent implements OnInit {
   loadCategories(departmentId: number): void {
     this.categoryService.getCategoriesByDepartment(departmentId).subscribe({
       next: (data) => {
-        this.categories = data;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.categories = data;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {},
     });
@@ -158,18 +178,25 @@ export class GrievanceMonitorComponent implements OnInit {
 
     this.grievanceService.searchGrievances(searchCriteria).subscribe({
       next: (data) => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
-          this.grievances = data;
+          // Sort by newest first (reverse chronological order)
+          this.grievances = data.sort((a, b) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA; // Newest first
+          });
           this.pageIndex = 0;
           this.applyPagination();
           this.isSearching = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
       error: () => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.isSearching = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
     });
@@ -179,6 +206,16 @@ export class GrievanceMonitorComponent implements OnInit {
     this.pageIndex = event.pageIndex;
     this.pageSize = event.pageSize;
     this.applyPagination();
+  }
+
+  onRowClick(grievance: any): void {
+    // Determine route based on current URL
+    const currentUrl = this.router.url;
+    if (currentUrl.includes('/admin/')) {
+      this.router.navigate(['/admin/grievances', grievance.id]);
+    } else {
+      this.router.navigate(['/supervisor/grievances', grievance.id]);
+    }
   }
 
   private applyPagination(): void {

@@ -101,7 +101,11 @@ export class CategoryManagementComponent implements OnInit {
   loadDepartments(): void {
     this.departmentService.getAllDepartments().subscribe({
       next: (data) => {
-        this.departments = data;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.departments = data;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {},
     });

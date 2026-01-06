@@ -1,3 +1,4 @@
+using eSamadhaan.Application.DTOs.Officer;
 using eSamadhaan.Domain.Enums;
 
 namespace eSamadhaan.Application.Interfaces.Services;
@@ -9,6 +10,7 @@ public interface IGrievanceService
     Task<object> GetGrievanceByIdAsync(int id);
     Task<object> GetGrievanceByNumberAsync(string grievanceNumber);
     Task<IEnumerable<object>> GetAllGrievancesAsync();
+    Task<OfficerGrievanceDetailDto> GetGrievanceDetailForSupervisorAsync(int grievanceId);
     
     // Filter and Search
     Task<IEnumerable<object>> GetGrievancesByCitizenAsync(int citizenId, GrievanceStatus? status = null);

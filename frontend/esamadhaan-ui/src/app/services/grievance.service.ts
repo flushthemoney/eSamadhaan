@@ -154,6 +154,10 @@ export class GrievanceService {
     return this.http.get<any>(`${this.apiUrl}/dashboard`);
   }
 
+  getGrievanceDetailForSupervisor(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${id}/detail`);
+  }
+
   getAllGrievances(): Observable<any[]> {
     return this.http.get<any[]>(this.apiUrl);
   }

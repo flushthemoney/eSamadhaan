@@ -3,40 +3,27 @@
 
 <mat-card style="margin-bottom: 1.5rem;">
   <mat-card-content>
-    <div class="filters">
+    <form [formGroup]="filterForm" class="filters">
       <mat-form-field appearance="outline">
-        <mat-label>Filter By</mat-label>
-        <mat-select [(ngModel)]="filterType" (selectionChange)="onFilterTypeChange()">
-          <mat-option value="all">All</mat-option>
-          <mat-option value="department">Department</mat-option>
-          <mat-option value="category">Category</mat-option>
+        <mat-label>Department</mat-label>
+        <mat-select formControlName="departmentId">
+          <mat-option [value]="''">All Departments</mat-option>
+          @for (dept of departments; track dept.id) {
+            <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
+          }
         </mat-select>
       </mat-form-field>
 
-      @if (filterType === 'department') {
-        <mat-form-field appearance="outline">
-          <mat-label>Department</mat-label>
-          <mat-select [(ngModel)]="selectedDepartmentId" (selectionChange)="onDepartmentChange()">
-            <mat-option [value]="null">Select Department</mat-option>
-            @for (dept of departments; track dept.id) {
-              <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      }
-
-      @if (filterType === 'category' && selectedDepartmentId) {
-        <mat-form-field appearance="outline">
-          <mat-label>Category</mat-label>
-          <mat-select [(ngModel)]="selectedCategoryId" (selectionChange)="loadPerformanceReport()">
-            <mat-option [value]="null">Select Category</mat-option>
-            @for (cat of categories; track cat.id) {
-              <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-      }
-    </div>
+      <mat-form-field appearance="outline">
+        <mat-label>Category</mat-label>
+        <mat-select formControlName="categoryId">
+          <mat-option [value]="''">All Categories</mat-option>
+          @for (cat of categories; track cat.id) {
+            <mat-option [value]="cat.id">{{ cat.name }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </form>
   </mat-card-content>
 </mat-card>
 

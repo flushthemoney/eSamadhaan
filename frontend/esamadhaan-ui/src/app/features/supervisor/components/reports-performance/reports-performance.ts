@@ -5,7 +5,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { FormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { ReportService } from '../../../../services/report.service';
 import { DepartmentService } from '../../../../services/department.service';
@@ -20,7 +20,7 @@ import { CategoryDto } from '../../../../models/category';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
+    ReactiveFormsModule,
     MatCardModule,
     MatSelectModule,
     MatFormFieldModule,
@@ -37,26 +37,53 @@ export class ReportsPerformanceComponent implements OnInit {
   departments: DepartmentDto[] = [];
   categories: CategoryDto[] = [];
   isLoading = false;
-  filterType: 'all' | 'department' | 'category' = 'all';
-  selectedDepartmentId: number | null = null;
-  selectedCategoryId: number | null = null;
+  filterForm: FormGroup;
 
   constructor(
     private reportService: ReportService,
     private departmentService: DepartmentService,
     private categoryService: CategoryService,
+    private fb: FormBuilder,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) {
+    this.filterForm = this.fb.group({
+      departmentId: [''],
+      categoryId: [{value: '', disabled: true}],
+    });
+  }
 
   ngOnInit(): void {
     this.loadDepartments();
     this.loadPerformanceReport();
+
+    // Subscribe to department changes
+    this.filterForm.get('departmentId')?.valueChanges.subscribe((departmentId) => {
+      const categoryControl = this.filterForm.get('categoryId');
+      categoryControl?.patchValue('');
+      this.categories = [];
+      if (departmentId) {
+        categoryControl?.enable();
+        this.loadCategories(departmentId);
+      } else {
+        categoryControl?.disable();
+      }
+      this.loadPerformanceReport();
+    });
+
+    // Subscribe to category changes
+    this.filterForm.get('categoryId')?.valueChanges.subscribe(() => {
+      this.loadPerformanceReport();
+    });
   }
 
   loadDepartments(): void {
     this.departmentService.getAllDepartments().subscribe({
       next: (data) => {
-        this.departments = data;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.departments = data;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {},
     });
@@ -65,51 +92,47 @@ export class ReportsPerformanceComponent implements OnInit {
   loadCategories(departmentId: number): void {
     this.categoryService.getCategoriesByDepartment(departmentId).subscribe({
       next: (data) => {
-        this.categories = data;
+        // Defer state changes to avoid change detection errors
+        setTimeout(() => {
+          this.categories = data;
+          this.cdr.markForCheck();
+        }, 0);
       },
       error: () => {},
     });
   }
 
-  onFilterTypeChange(): void {
-    this.selectedDepartmentId = null;
-    this.selectedCategoryId = null;
-    this.categories = [];
-    this.loadPerformanceReport();
-  }
-
-  onDepartmentChange(): void {
-    this.selectedCategoryId = null;
-    this.categories = [];
-    if (this.selectedDepartmentId) {
-      this.loadCategories(this.selectedDepartmentId);
-    }
-    this.loadPerformanceReport();
-  }
-
   loadPerformanceReport(): void {
     this.isLoading = true;
+    const departmentId = this.filterForm.get('departmentId')?.value;
+    const categoryId = this.filterForm.get('categoryId')?.value;
+
     let obs;
-    if (this.filterType === 'department' && this.selectedDepartmentId) {
-      obs = this.reportService.getResolutionTimeReport(this.selectedDepartmentId, undefined);
-    } else if (this.filterType === 'category' && this.selectedCategoryId) {
-      obs = this.reportService.getResolutionTimeReport(undefined, this.selectedCategoryId);
+    if (categoryId) {
+      // Department + Category: use category endpoint
+      obs = this.reportService.getResolutionTimeReport(undefined, categoryId);
+    } else if (departmentId) {
+      // Department only: use department endpoint
+      obs = this.reportService.getResolutionTimeReport(departmentId, undefined);
     } else {
+      // No filters: use general endpoint
       obs = this.reportService.getResolutionTimeReport();
     }
 
     obs.subscribe({
       next: (data) => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.performanceData = data;
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
       error: () => {
+        // Defer state changes to avoid change detection errors
         setTimeout(() => {
           this.isLoading = false;
-          this.cdr.detectChanges();
+          this.cdr.markForCheck();
         }, 0);
       },
     });

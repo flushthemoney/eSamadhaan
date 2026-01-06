@@ -1,4 +1,5 @@
 using eSamadhaan.Application.DTOs.Grievance;
+using eSamadhaan.Application.DTOs.Officer;
 using eSamadhaan.Application.Exceptions;
 using eSamadhaan.Application.Interfaces.Repositories;
 using eSamadhaan.Application.Interfaces.Services;
@@ -234,6 +235,59 @@ public class GrievanceService : IGrievanceService
             ChangedAt = h.ChangedAt,
             Remarks = h.Remarks
         });
+    }
+
+    public async Task<OfficerGrievanceDetailDto> GetGrievanceDetailForSupervisorAsync(int grievanceId)
+    {
+        // Get grievance with related data (no department restrictions)
+        var grievance = await _grievanceRepository.GetByIdAsync(grievanceId);
+        if (grievance == null)
+        {
+            throw new NotFoundException("Grievance", grievanceId);
+        }
+
+        // Get status history
+        var statusHistory = await _statusHistoryRepository.GetByGrievanceIdAsync(grievanceId);
+
+        // Get current active assignment
+        var currentAssignment = await _assignmentRepository.GetActiveByGrievanceIdAsync(grievanceId);
+
+        // Map to DTO
+        var dto = new OfficerGrievanceDetailDto
+        {
+            Id = grievance.Id,
+            GrievanceNumber = grievance.GrievanceNumber,
+            CategoryId = grievance.CategoryId,
+            CategoryName = grievance.Category?.Name ?? string.Empty,
+            DepartmentId = grievance.DepartmentId,
+            DepartmentName = grievance.Department?.Name ?? string.Empty,
+            CurrentStatus = grievance.CurrentStatus,
+            Description = grievance.Description,
+            AttachmentUrl = grievance.AttachmentUrl,
+            CreatedAt = grievance.CreatedAt,
+            UpdatedAt = grievance.UpdatedAt,
+            CurrentAssignment = currentAssignment != null ? new OfficerAssignmentDto
+            {
+                OfficerId = currentAssignment.OfficerId,
+                OfficerName = currentAssignment.Officer?.Name ?? string.Empty,
+                AssignedAt = currentAssignment.AssignedAt,
+                IsActive = currentAssignment.IsActive
+            } : null,
+            StatusHistory = statusHistory
+                .OrderBy(h => h.ChangedAt)
+                .Select(h => new OfficerStatusHistoryDto
+                {
+                    Id = h.Id,
+                    OldStatus = h.OldStatus,
+                    NewStatus = h.NewStatus,
+                    ChangedByUserName = h.ChangedByUser?.Name ?? "Unknown",
+                    ChangedAt = h.ChangedAt,
+                    Remarks = h.Remarks
+                })
+                .ToList()
+        };
+
+        return dto;
     }
 
     public async Task ReopenGrievanceAsync(int grievanceId, int userId, string reason)

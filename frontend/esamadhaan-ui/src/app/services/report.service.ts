@@ -29,10 +29,13 @@ export class ReportService {
     return this.http.get<any>(`${this.apiUrl}/department/${departmentId}/performance`);
   }
 
-  getOfficerPerformanceReport(topCount?: number): Observable<any[]> {
+  getOfficerPerformanceReport(topCount?: number, departmentId?: number): Observable<any[]> {
     let params = new HttpParams();
     if (topCount) {
       params = params.set('topCount', topCount.toString());
+    }
+    if (departmentId) {
+      params = params.set('departmentId', departmentId.toString());
     }
     return this.http.get<any[]>(`${this.apiUrl}/officers/top-performers`, { params });
   }
