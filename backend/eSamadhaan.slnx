@@ -5,5 +5,6 @@
     <Project Path="src/eSamadhaan.Domain/eSamadhaan.Domain.csproj" />
     <Project Path="src/eSamadhaan.Infrastructure/eSamadhaan.Infrastructure.csproj" />
     <Project Path="src/eSamadhaan.DatabaseSeeder/eSamadhaan.DatabaseSeeder.csproj" />
+    <Project Path="src/eSamadhaan.Application.Tests/eSamadhaan.Application.Tests.csproj" />
   </Folder>
 </Solution>
