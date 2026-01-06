@@ -1,4 +1,4 @@
-<app-page-header title="Dashboard" subtitle="Overview of your grievances">
+<app-page-header title="Dashboard" subtitle="Overview of your grievances & the grievance timeline">
   <button mat-raised-button color="primary" routerLink="/citizen/grievances/new">
     <mat-icon>add</mat-icon>
     Lodge New Grievance
@@ -6,67 +6,78 @@
 </app-page-header>
 
 @if (isLoading) {
-  <app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
+<app-loading-spinner [isLoading]="isLoading"></app-loading-spinner>
 } @else if (grievances.length === 0) {
-  <app-empty-state
-    icon="inbox"
-    message="No grievances yet"
-    subMessage="You haven't submitted any grievances yet. Click the button below to lodge your first grievance."
-  >
-    <button mat-raised-button color="primary" routerLink="/citizen/grievances/new">
-      Add New Grievance
-    </button>
-  </app-empty-state>
+<app-empty-state
+  icon="inbox"
+  message="No grievances yet"
+  subMessage="You haven't submitted any grievances yet. Click the button below to lodge your first grievance."
+>
+  <button mat-raised-button color="primary" routerLink="/citizen/grievances/new">
+    Add New Grievance
+  </button>
+</app-empty-state>
 } @else {
-  <app-grievance-timeline></app-grievance-timeline>
-  
-  <mat-card>
-    <mat-card-header>
-      <mat-card-title>Recent Grievances</mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="table-container">
-        <table mat-table [dataSource]="dataSource" class="grievance-table">
-          <ng-container matColumnDef="grievanceNumber">
-            <th mat-header-cell *matHeaderCellDef>Grievance Number</th>
-            <td mat-cell *matCellDef="let grievance">{{ grievance.grievanceNumber }}</td>
-          </ng-container>
+<app-grievance-timeline></app-grievance-timeline>
 
-          <ng-container matColumnDef="categoryName">
-            <th mat-header-cell *matHeaderCellDef>Category</th>
-            <td mat-cell *matCellDef="let grievance">{{ grievance.categoryName }}</td>
-          </ng-container>
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Recent Grievances</mat-card-title>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" class="grievance-table">
+        <ng-container matColumnDef="grievanceNumber">
+          <th mat-header-cell *matHeaderCellDef>Grievance Number</th>
+          <td mat-cell *matCellDef="let grievance">{{ grievance.grievanceNumber }}</td>
+        </ng-container>
 
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let grievance">
-              <app-grievance-status-badge [status]="grievance.currentStatus"></app-grievance-status-badge>
-            </td>
-          </ng-container>
+        <ng-container matColumnDef="categoryName">
+          <th mat-header-cell *matHeaderCellDef>Category</th>
+          <td mat-cell *matCellDef="let grievance">{{ grievance.categoryName }}</td>
+        </ng-container>
 
-          <ng-container matColumnDef="createdAt">
-            <th mat-header-cell *matHeaderCellDef>Created</th>
-            <td mat-cell *matCellDef="let grievance">{{ grievance.createdAt | relativeTime }}</td>
-          </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let grievance">
+            <app-grievance-status-badge
+              [status]="grievance.currentStatus"
+            ></app-grievance-status-badge>
+          </td>
+        </ng-container>
 
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Actions</th>
-            <td mat-cell *matCellDef="let grievance">
-              <button mat-icon-button [routerLink]="['/citizen/grievances', grievance.id]" aria-label="View grievance details">
-                <mat-icon>visibility</mat-icon>
-              </button>
-            </td>
-          </ng-container>
+        <ng-container matColumnDef="createdAt">
+          <th mat-header-cell *matHeaderCellDef>Created</th>
+          <td mat-cell *matCellDef="let grievance">{{ grievance.createdAt | relativeTime }}</td>
+        </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" [routerLink]="['/citizen/grievances', row.id]" class="clickable-row"></tr>
-        </table>
-      </div>
-      <mat-paginator
-        [pageSizeOptions]="[5, 10, 25, 50]"
-        [pageSize]="5"
-        showFirstLastButtons
-      ></mat-paginator>
-    </mat-card-content>
-  </mat-card>
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let grievance">
+            <button
+              mat-icon-button
+              [routerLink]="['/citizen/grievances', grievance.id]"
+              aria-label="View grievance details"
+            >
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          [routerLink]="['/citizen/grievances', row.id]"
+          class="clickable-row"
+        ></tr>
+      </table>
+    </div>
+    <mat-paginator
+      [pageSizeOptions]="[5, 10, 25, 50]"
+      [pageSize]="5"
+      showFirstLastButtons
+    ></mat-paginator>
+  </mat-card-content>
+</mat-card>
 }

@@ -40,7 +40,7 @@
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Role</mat-label>
-            <mat-select formControlName="role" required>
+            <mat-select id="user-role-select" formControlName="role" required>
               <mat-option [value]="">Select Role</mat-option>
               @for (role of roles; track role.value) {
                 <mat-option [value]="role.value">{{ role.label }}</mat-option>
@@ -51,7 +51,7 @@
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Department</mat-label>
-            <mat-select formControlName="departmentId" [disabled]="userForm.get('role')?.value !== 'DepartmentOfficer'">
+            <mat-select id="user-department-select" formControlName="departmentId" [disabled]="userForm.get('role')?.value !== 'DepartmentOfficer'">
               <mat-option [value]="null">Select Department</mat-option>
               @for (dept of departments; track dept.id) {
                 <mat-option [value]="dept.id">{{ dept.name }}</mat-option>
@@ -126,7 +126,7 @@
               <button mat-icon-button (click)="showEditForm(user)" aria-label="Edit user">
                 <mat-icon>edit</mat-icon>
               </button>
-              <button mat-icon-button [color]="user.isActive ? 'warn' : 'primary'" (click)="toggleUserStatus(user)" [aria-label]="user.isActive ? 'Deactivate user' : 'Activate user'">
+              <button mat-icon-button [color]="user.isActive ? 'warn' : 'primary'" (click)="toggleUserStatus(user)" [disabled]="isCurrentUser(user)" [aria-label]="user.isActive ? 'Deactivate user' : 'Activate user'">
                 <mat-icon>{{ user.isActive ? 'block' : 'check_circle' }}</mat-icon>
               </button>
             </td>

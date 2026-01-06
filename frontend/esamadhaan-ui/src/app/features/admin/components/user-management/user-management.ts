@@ -17,6 +17,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { UserService } from '../../../../services/user.service';
 import { DepartmentService } from '../../../../services/department.service';
 import { NotificationService } from '../../../../core/services/notification.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { LoadingSpinnerComponent } from '../../../../shared/components/loading-spinner/loading-spinner';
 import { EmptyStateComponent } from '../../../../shared/components/empty-state/empty-state';
 import { PageHeaderComponent } from '../../../../shared/components/page-header/page-header';
@@ -72,6 +73,7 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
     private userService: UserService,
     private departmentService: DepartmentService,
     private notificationService: NotificationService,
+    private authService: AuthService,
     private dialog: MatDialog,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
@@ -237,7 +239,17 @@ export class UserManagementComponent implements OnInit, AfterViewInit {
     }
   }
 
+  isCurrentUser(user: UserDto): boolean {
+    const currentUserId = this.authService.userId;
+    return currentUserId !== null && user.id === currentUserId;
+  }
+
   toggleUserStatus(user: UserDto): void {
+    if (this.isCurrentUser(user)) {
+      this.notificationService.showError('You cannot change your own status');
+      return;
+    }
+
     const request: UpdateUserStatusRequest = {
       isActive: !user.isActive,
     };
