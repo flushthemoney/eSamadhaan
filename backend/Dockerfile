@@ -19,11 +19,11 @@ COPY src/ src/
 
 # Build the application
 WORKDIR /src/src/eSamadhaan.API
-RUN dotnet build -c Release -o /app/build --no-restore -m:1
+RUN dotnet build -c Release -o /app/build --no-restore
 
 # Stage 2: Publish
 FROM build AS publish
-RUN dotnet publish -c Release -o /app/publish --no-restore -m:1
+RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # Stage 3: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
