@@ -32,3 +32,6 @@ frontend/esamadhaan-ui/.env.*
 
 # Node
 node_modules/
+
+.env
+DOCKER.md

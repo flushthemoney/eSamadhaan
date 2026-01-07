@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Note: package-lock.json is needed for npm ci, so it's NOT excluded
+yarn.lock
+
+# Build outputs
+dist/
+.angular/
+*.tsbuildinfo
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+docs/
+README.md
+
+# Test files
+coverage/
+.nyc_output/
+*.spec.ts
+
+# Logs
+logs/
+*.log
+
+# Note: environment.prod.ts is needed for the build, so it's NOT excluded
+
