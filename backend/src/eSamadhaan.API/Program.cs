@@ -168,13 +168,16 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // ========================================
-// 8. CORS Configuration (Optional)
+// 8. CORS Configuration
 // ========================================
+var allowedOrigins = builder.Configuration["CORS:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    ?? new[] { "http://localhost:4200", "https://localhost:4200" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularApp", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -204,8 +207,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// HTTPS Redirection
-app.UseHttpsRedirection();
+// HTTPS Redirection (skip in production behind reverse proxy)
+if (!app.Environment.IsProduction() || builder.Configuration.GetValue<bool>("ForceHttps", false))
+{
+    app.UseHttpsRedirection();
+}
 
 // Authentication & Authorization
 app.UseAuthentication();

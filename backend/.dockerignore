@@ -1,0 +1,57 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# Visual Studio files
+**/.vs/
+**/.vscode/
+**/*.user
+**/*.suo
+**/*.userosscache
+**/*.sln.docstates
+
+# Test results
+**/TestResults/
+**/coverage/
+**/*.trx
+**/*.coverage
+
+# NuGet packages
+**/packages/
+**/*.nupkg
+**/*.snupkg
+
+# Database files
+**/*.db
+**/*.mdf
+**/*.ldf
+
+# Logs
+**/*.log
+**/logs/
+
+# OS files
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+**/.git/
+**/.gitignore
+**/.gitattributes
+
+# Docker
+**/Dockerfile*
+**/.dockerignore
+**/docker-compose*.yml
+
+# Documentation
+**/docs/
+**/README.md
+
+# Scripts (entrypoint.sh is needed, so we only exclude specific ones)
+**/seed-database.*
+**/*.ps1
+# Note: entrypoint.sh must NOT be excluded - it's required for the container
+
