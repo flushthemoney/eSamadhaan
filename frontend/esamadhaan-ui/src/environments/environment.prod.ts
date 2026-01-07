@@ -2,8 +2,8 @@ import { Environment } from './environment.interface';
 
 export const environment: Environment = {
   production: true,
-  environmentName: "Production",
-  apiUrl: "https://api.esamadhaan.gov.in/api",
+  environmentName: 'Production',
+  apiUrl: 'https://api.esamadhaan.flushthemoney.com/api',
   apiTimeout: 30000,
 
   // Feature Flags
@@ -19,7 +19,7 @@ export const environment: Environment = {
 
   // Authentication
   auth: {
-    tokenKey: "auth_token",
+    tokenKey: 'auth_token',
     tokenExpiryMinutes: 120,
     refreshTokenEnabled: false,
   },
@@ -33,8 +33,8 @@ export const environment: Environment = {
   // File Upload
   fileUpload: {
     maxSizeInMB: 5,
-    allowedTypes: ["application/pdf", "image/jpeg", "image/jpg", "image/png"],
-    allowedExtensions: [".pdf", ".jpg", ".jpeg", ".png"],
+    allowedTypes: ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'],
+    allowedExtensions: ['.pdf', '.jpg', '.jpeg', '.png'],
   },
 
   // Notification
@@ -44,23 +44,22 @@ export const environment: Environment = {
     warningDuration: 4000,
     infoDuration: 3000,
     position: {
-      horizontal: "end",
-      vertical: "top",
+      horizontal: 'end',
+      vertical: 'top',
     },
   },
 
   // Logging
   logging: {
-    level: "error", // Only log errors in production
+    level: 'error', // Only log errors in production
     enableConsoleLog: false,
     enableRemoteLog: true,
   },
 
   // External Services
   externalServices: {
-    analyticsId: "UA-XXXXX-Y",
-    sentryDsn: "https://xxx@sentry.io/production",
-    googleMapsApiKey: "AIzaSy-PRODUCTION-KEY",
+    analyticsId: 'UA-XXXXX-Y',
+    sentryDsn: 'https://xxx@sentry.io/production',
+    googleMapsApiKey: 'AIzaSy-PRODUCTION-KEY',
   },
 };
-
