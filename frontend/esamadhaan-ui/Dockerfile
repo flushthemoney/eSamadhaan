@@ -22,7 +22,8 @@ RUN if [ -n "$API_URL" ] && [ "$API_URL" != "https://api.esamadhaan.gov.in/api" 
 
 # Build the application
 ENV NODE_OPTIONS="--max-old-space-size=512"
-RUN npm run build -- --configuration production --max-workers=1
+ENV UV_THREADPOOL_SIZE=1
+RUN npm run build -- --configuration=production
 
 # Stage 2: Runtime with nginx
 FROM nginx:alpine AS final
