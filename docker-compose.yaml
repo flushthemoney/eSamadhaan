@@ -23,7 +23,7 @@ services:
       start_period: 40s
 
   frontend:
-    image: ghcr.io/<github-username>/esamadhaan-ui:latest
+    image: ghcr.io/flushthemoney/esamadhaan-ui:latest
     depends_on:
       - backend
     ports:
